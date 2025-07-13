@@ -86,6 +86,17 @@ def get_semester_by_name_year(
         raise HTTPException(status_code=404, detail="Semester not found")
     return semester
 
+@app.get("/api/v1/semesters/get-or-create", response_model=schemas.ExamSemester)
+def get_or_create_semester(
+    name: str = Query(...),
+    year: int = Query(...),
+    db: Session = Depends(get_db)
+):
+    print(f"Getting or creating semester with year: {year} and name: '{name}'")
+    semester = crud.get_semester_by_year_and_name(db, year, name)
+    if not semester:
+        semester = crud.create_semester(db, schemas.ExamSemesterCreate(year=year, semester_name=name))
+    return semester
 
 @app.post("/api/v1/semesters", response_model=schemas.ExamSemester)
 def create_semester(semester: schemas.ExamSemesterCreate, db: Session = Depends(get_db)):

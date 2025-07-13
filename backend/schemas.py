@@ -42,7 +42,7 @@ class ExamSemesterBase(BaseModel):
     exam_start_date: Optional[date] = None
     exam_end_date: Optional[date] = None
     result_publish_date: Optional[date] = None
-    chairman_id: int
+    chairman_id: Optional[int] = None
 
 class ExamSemesterCreate(ExamSemesterBase):
     pass

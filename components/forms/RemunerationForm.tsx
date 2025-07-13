@@ -40,9 +40,13 @@ interface FormData {
 }
 
 export default function RemunerationForm() {
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
+  
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [courses, setCourses] = useState<Course[]>([])
-  const [semesters, setSemesters] = useState<ExamSemester[]>([])
+  const [selectedSemesterName, setSelectedSemesterName] = useState<string | null>(null)
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null)
   const [selectedSemester, setSelectedSemester] = useState<ExamSemester | null>(null)
   const [loading, setLoading] = useState(false)
@@ -70,7 +74,31 @@ export default function RemunerationForm() {
   } = useForm<FormData>()
 
   const watchedTeacherId = watch("teacher_id")
-  const watchedSemesterId = watch("exam_semester_id")
+  // const watchedSemesterId = watch("exam_semester_id")
+
+  const handleYearChange = (value: string) => {
+    setSelectedYear((value ? parseInt(value) : null));
+  };
+
+  useEffect(() => {
+    loadSemester()
+  }, [selectedSemesterName, selectedYear])
+  
+  const loadSemester = async () => {
+    try {
+      if(selectedSemesterName && selectedYear) {
+        console.log(`Loading semester for ${selectedSemesterName} ${selectedYear}`);
+        
+        const response = await semesterApi.getOrCreate(selectedSemesterName, selectedYear)
+        
+        setSelectedSemester(response.data)
+      }
+    } catch (error:any) {
+      console.error("Error loading semesters:", error)
+      // check axios error response
+      alert("Internal issues!")
+    }
+  }
 
   useEffect(() => {
     loadInitialData()
@@ -83,26 +111,18 @@ export default function RemunerationForm() {
     }
   }, [watchedTeacherId, teachers])
 
-  useEffect(() => {
-    if (watchedSemesterId) {
-      const semester = semesters.find((s) => s.id === Number(watchedSemesterId))
-      setSelectedSemester(semester || null)
-      if (semester) {
-        setValue("exam_year", semester.year)
-      }
-    }
-  }, [watchedSemesterId, semesters, setValue])
+
 
   const loadInitialData = async () => {
     try {
-      const [teachersRes, coursesRes, semestersRes] = await Promise.all([
+      const [teachersRes, coursesRes] = await Promise.all([
         teacherApi.getAll(),
         courseApi.getAll(),
-        semesterApi.getAll(),
+        // semesterApi.getAll(),
       ])
       setTeachers(teachersRes.data)
       setCourses(coursesRes.data)
-      setSemesters(semestersRes.data)
+      // setSemesters(semestersRes.data)
     } catch (error) {
       console.error("Error loading initial data:", error)
     }
@@ -118,7 +138,7 @@ export default function RemunerationForm() {
     try {
       const submissionData: RemunerationSubmission = {
         teacher_id: data.teacher_id,
-        exam_semester_id: data.exam_semester_id,
+        exam_semester_id: selectedSemester.id,
         question_preparations: questionPreparations.filter((item) => item.course_id > 0),
         question_moderations: questionModerations.filter((item) => item.course_id > 0),
         script_evaluations: scriptEvaluations.filter((item) => item.course_id > 0),
@@ -189,16 +209,19 @@ export default function RemunerationForm() {
 
             <div>
               <Label htmlFor="exam_semester_id">পরীক্ষার সেমিস্টার</Label>
-              <Select onValueChange={(value) => setValue("exam_semester_id", Number(value))}>
+              <Select onValueChange={(value) => setSelectedSemesterName(String(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
-                  {semesters.map((semester) => (
-                    <SelectItem key={semester.id} value={semester.id.toString()}>
-                      {semester.semester_name} - {semester.year}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="1st Year 1st Semester">১ম বর্ষ ১ম সেমিস্টার</SelectItem>
+                  <SelectItem value="1st Year 2nd Semester">১ম বর্ষ ২য় সেমিস্টার</SelectItem>
+                  <SelectItem value="2nd Year 1st Semester">২য় বর্ষ ১ম সেমিস্টার</SelectItem>
+                  <SelectItem value="2nd Year 2nd Semester">২য় বর্ষ ২য় সেমিস্টার</SelectItem>
+                  <SelectItem value="3rd Year 1st Semester">৩য় বর্ষ ১ম সেমিস্টার</SelectItem>
+                  <SelectItem value="3rd Year 2nd Semester">৩য় বর্ষ ২য় সেমিস্টার</SelectItem>
+                  <SelectItem value="4th Year 1st Semester">৪র্থ বর্ষ ১ম সেমিস্টার</SelectItem>
+                  <SelectItem value="4th Year 2nd Semester">৪র্থ বর্ষ ২য় সেমিস্টার</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -216,13 +239,18 @@ export default function RemunerationForm() {
           )}
 
           <div>
-            <Label htmlFor="exam_year">পরীক্ষার বছর</Label>
-            <Input
-              {...register("exam_year", { required: true })}
-              type="number"
-              placeholder="২০২৩"
-              readOnly={!!selectedSemester}
-            />
+            <Select onValueChange={handleYearChange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

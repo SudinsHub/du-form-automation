@@ -108,7 +108,8 @@ export const semesterApi = {
   getAll: () => api.get<ExamSemester[]>("/semesters"),
   create: (data: Omit<ExamSemester, "id">) => api.post<ExamSemester>("/semesters", data),
   getByNameAndYear: (name: string, year: number) => 
-    api.get<ExamSemester>(`/semesters/by-name-year?name=${encodeURIComponent(name)}&year=${year}`)
+    api.get<ExamSemester>(`/semesters/by-name-year?name=${encodeURIComponent(name)}&year=${year}`),
+  getOrCreate: async (name: string, year: number) => api.get<ExamSemester>(`/semesters/get-or-create?name=${encodeURIComponent(name)}&year=${year}`),
 }
 
 export const remunerationApi = {

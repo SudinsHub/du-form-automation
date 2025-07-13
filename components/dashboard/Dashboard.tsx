@@ -24,7 +24,7 @@ export default function Dashboard() {
   
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   
-  const [semesters, setSemesters] = useState<ExamSemester[]>([])
+
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null)
   const [selectedSemesterName, setSelectedSemesterName] = useState<string | null>(null) // If using string values
   const [reportData, setReportData] = useState<ReportData[]>([])
@@ -37,16 +37,17 @@ export default function Dashboard() {
   const handleYearChange = (value: string) => {
     setSelectedYear((value ? parseInt(value) : null));
   };
-  useEffect(() => {
-    loadSemester()
-  }, [selectedSemesterName, selectedYear])
-
+  
   useEffect(() => {
     if (selectedSemester) {
       loadReport()
     }
   }, [selectedSemester])
 
+  useEffect(() => {
+    loadSemester()
+  }, [selectedSemesterName, selectedYear])
+  
   const loadSemester = async () => {
     try {
       if(selectedSemesterName && selectedYear) {
@@ -105,13 +106,6 @@ export default function Dashboard() {
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("bn-BD", {
-      style: "currency",
-      currency: "BDT",
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
 
   const exportFormPDF = async (teacher_id:number, semester_id:number) => {
     try {
@@ -154,11 +148,6 @@ export default function Dashboard() {
               <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
             </SelectTrigger>
             <SelectContent>
-              {/* {semesters.map((semester) => (
-                <SelectItem key={semester.id} value={semester.id.toString()}>
-                  {semester.semester_name} - {semester.year}
-                </SelectItem>
-              ))} */}
               <SelectItem value="1st Year 1st Semester">১ম বর্ষ ১ম সেমিস্টার</SelectItem>
               <SelectItem value="1st Year 2nd Semester">১ম বর্ষ ২য় সেমিস্টার</SelectItem>
               <SelectItem value="2nd Year 1st Semester">২য় বর্ষ ১ম সেমিস্টার</SelectItem>
