@@ -34,7 +34,7 @@ export default function Home() {
               <GraduationCap className="h-8 w-8 text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">ঢাকা বিশ্ববিদ্যালয়</h1>
-                <p className="text-sm text-gray-600">পরীক্ষা সম্মানী ব্যবস্থাপনা সিস্টেম</p>
+                <p className="text-sm text-gray-600">স্বয়ংক্রিয় ফর্ম পূরণ ব্যবস্থা</p>
               </div>
             </div>
             <Button onClick={initializeSampleData} variant="outline">

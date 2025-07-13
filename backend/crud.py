@@ -27,6 +27,20 @@ def create_course(db: Session, course: schemas.CourseCreate):
 def get_semesters(db: Session):
     return db.query(models.ExamSemester).all()
 
+def get_semester_by_year_and_name(db: Session, year: int, semester_name: str):
+    print(f"Fetching semester with year: {year} and name: '{semester_name}'")
+    
+    # Debug: Check what semesters exist
+    all_semesters = db.query(models.ExamSemester).all()
+    print(f"All semesters in DB: {[(s.year, s.semester_name) for s in all_semesters]}")
+    
+    result = db.query(models.ExamSemester).filter(
+        and_(models.ExamSemester.year == int(year), models.ExamSemester.semester_name == semester_name)
+    ).first()
+    
+    print(f"Query result: {result}")
+    return result
+
 def create_semester(db: Session, semester: schemas.ExamSemesterCreate):
     db_semester = models.ExamSemester(**semester.dict())
     db.add(db_semester)

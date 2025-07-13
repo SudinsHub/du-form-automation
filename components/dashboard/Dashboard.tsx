@@ -19,18 +19,27 @@ interface ReportData {
 }
 
 export default function Dashboard() {
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
+  
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  
   const [semesters, setSemesters] = useState<ExamSemester[]>([])
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null)
+  const [selectedSemesterName, setSelectedSemesterName] = useState<string | null>(null) // If using string values
   const [reportData, setReportData] = useState<ReportData[]>([])
   const [loading, setLoading] = useState(false)
   const [stats, setStats] = useState({
     totalTeachers: 0,
     totalSubmissions: 0,
   })
-
+  
+  const handleYearChange = (value: string) => {
+    setSelectedYear((value ? parseInt(value) : null));
+  };
   useEffect(() => {
-    loadSemesters()
-  }, [])
+    loadSemester()
+  }, [selectedSemesterName, selectedYear])
 
   useEffect(() => {
     if (selectedSemester) {
@@ -38,12 +47,19 @@ export default function Dashboard() {
     }
   }, [selectedSemester])
 
-  const loadSemesters = async () => {
+  const loadSemester = async () => {
     try {
-      const response = await semesterApi.getAll()
-      setSemesters(response.data)
-    } catch (error) {
+      if(selectedSemesterName && selectedYear) {
+        const response = await semesterApi.getByNameAndYear(selectedSemesterName, selectedYear)
+        
+        setSelectedSemester(response.data.id)
+      }
+    } catch (error:any) {
       console.error("Error loading semesters:", error)
+      // check axios error response
+      if (error.response && error.response.status === 404) {
+        alert("সেমিস্টার পাওয়া যায়নি। অনুগ্রহ করে সঠিক বছর এবং সেমিস্টার নির্বাচন করুন।")
+      }
     }
   }
 
@@ -121,16 +137,36 @@ export default function Dashboard() {
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">ড্যাশবোর্ড</h2>
         <div className="flex items-center space-x-4">
-          <Select onValueChange={(value) => setSelectedSemester(Number(value))}>
+          <Select onValueChange={handleYearChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map((year) => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select onValueChange={(value) => setSelectedSemesterName(String(value))}>
             <SelectTrigger className="w-64">
               <SelectValue placeholder="সেমিস্টার নির্বাচন করুন" />
             </SelectTrigger>
             <SelectContent>
-              {semesters.map((semester) => (
+              {/* {semesters.map((semester) => (
                 <SelectItem key={semester.id} value={semester.id.toString()}>
                   {semester.semester_name} - {semester.year}
                 </SelectItem>
-              ))}
+              ))} */}
+              <SelectItem value="1st Year 1st Semester">১ম বর্ষ ১ম সেমিস্টার</SelectItem>
+              <SelectItem value="1st Year 2nd Semester">১ম বর্ষ ২য় সেমিস্টার</SelectItem>
+              <SelectItem value="2nd Year 1st Semester">২য় বর্ষ ১ম সেমিস্টার</SelectItem>
+              <SelectItem value="2nd Year 2nd Semester">২য় বর্ষ ২য় সেমিস্টার</SelectItem>
+              <SelectItem value="3rd Year 1st Semester">৩য় বর্ষ ১ম সেমিস্টার</SelectItem>
+              <SelectItem value="3rd Year 2nd Semester">৩য় বর্ষ ২য় সেমিস্টার</SelectItem>
+              <SelectItem value="4th Year 1st Semester">৪র্থ বর্ষ ১ম সেমিস্টার</SelectItem>
+              <SelectItem value="4th Year 2nd Semester">৪র্থ বর্ষ ২য় সেমিস্টার</SelectItem>
             </SelectContent>
           </Select>
           {selectedSemester && (

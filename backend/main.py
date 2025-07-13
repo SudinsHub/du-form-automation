@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import get_db, engine, Base
@@ -49,6 +49,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
 # Teachers endpoints
 @app.get("/api/v1/teachers", response_model=List[schemas.Teacher])
 def get_teachers(db: Session = Depends(get_db)):
@@ -71,6 +73,19 @@ def create_course(course: schemas.CourseCreate, db: Session = Depends(get_db)):
 @app.get("/api/v1/semesters", response_model=List[schemas.ExamSemester])
 def get_semesters(db: Session = Depends(get_db)):
     return crud.get_semesters(db)
+
+@app.get("/api/v1/semesters/by-name-year", response_model=schemas.ExamSemester)
+def get_semester_by_name_year(
+    name: str = Query(...),
+    year: int = Query(...),
+    db: Session = Depends(get_db)
+):
+    print(f"Fetching semester with year: {year} and name: '{name}'")
+    semester = crud.get_semester_by_year_and_name(db, year, name)
+    if not semester:
+        raise HTTPException(status_code=404, detail="Semester not found")
+    return semester
+
 
 @app.post("/api/v1/semesters", response_model=schemas.ExamSemester)
 def create_semester(semester: schemas.ExamSemesterCreate, db: Session = Depends(get_db)):
