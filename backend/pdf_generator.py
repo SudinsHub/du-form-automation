@@ -255,93 +255,187 @@ def generate_individual_pdf(db: Session, data):
         "filename": f"remuneration_bill_{teacher.name}_{semester.year}_{semester.semester_name}.pdf"
     }
 
-def generate_cumulative_pdf(db: Session, data):
-    semester = db.query(models.ExamSemester).filter(models.ExamSemester.id == data.exam_semester_id).first()
-    report_data = crud.get_cumulative_report(db, data.exam_semester_id)
+def generate_cumulative_pdf(db: Session, data): 
+    semester = db.query(models.ExamSemester).filter(models.ExamSemester.id == data.exam_semester_id).first() 
+    report_data = crud.get_cumulative_report(db, data.exam_semester_id) 
     
-    html_template = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <title>Cumulative Remuneration Report</title>
-        <style>
-            body { font-family: 'Arial', sans-serif; margin: 20px; font-size: 12px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-            th { background-color: #f0f0f0; font-weight: bold; }
-            .header { text-align: center; font-weight: bold; margin-bottom: 20px; }
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <h2>{{ semester.semester_name }} Examination {{ semester.year }}</h2>
-            <h3>Department of Computer Science and Engineering</h3>
-            <h3>University of Dhaka</h3>
-            <p>Bill Statement</p>
-        </div>
+    # Fetch all courses for easy lookup
+    all_courses = {course.id: course for course in db.query(models.Course).all()}
+
+    html_template = """ 
+    <!DOCTYPE html> 
+    <html> 
+    <head> 
+        <meta charset="utf-8"> 
+        <title>Cumulative Remuneration Report</title> 
+        <style> 
+            body { font-family: 'Arial', sans-serif; margin: 20px; font-size: 10px; } 
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; } 
+            th, td { border: 1px solid #000; padding: 4px; text-align: left; vertical-align: top; } 
+            th { background-color: #f0f0f0; font-weight: bold; } 
+            .header { text-align: center; font-weight: bold; margin-bottom: 15px; } 
+            .subheader { text-align: center; margin-bottom: 10px; }
+            .section-title { font-weight: bold; margin-top: 10px; margin-bottom: 5px; }
+            .signature { margin-top: 50px; text-align: right; }
+            .signature div { border-top: 1px solid #000; width: 250px; margin-left: auto; text-align: center; padding-top: 5px; }
+        </style> 
+    </head> 
+    <body> 
+        <div class="header"> 
+            <h2>{{ semester.semester_name }} Examination {{ semester.year }}</h2> 
+            <h3>Department of Computer Science and Engineering</h3> 
+            <h3>University of Dhaka</h3> 
+            <p>Bill Statement</p> 
+            <p>Date of Submission of Bill: {{ "____________" }}</p>
+            <p>Exam started on: {{ semester.exam_start_date.strftime('%d %B, %Y') if semester.exam_start_date else 'N/A' }}</p>
+            <p>Exam ended on: {{ semester.exam_end_date.strftime('%d %B, %Y') if semester.exam_end_date else 'N/A' }}</p>
+            <p>Result Published on: {{ semester.result_publish_date.strftime('%d %B, %Y') if semester.result_publish_date else 'N/A' }}</p>
+        </div> 
         
-        <table>
-            <thead>
-                <tr>
-                    <th>Serial No.</th>
-                    <th>Name and Address of the Examiner</th>
-                    <th>Activities</th>
-                    <th>Total Amount (To be calculated)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in report_data %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>{{ item.teacher.name }}<br>{{ item.teacher.designation }}, {{ item.teacher.department }}</td>
+        <table> 
+            <thead> 
+                <tr> 
+                    <th>No.</th> 
+                    <th>Name and Address of the Examiner</th> 
+                    <th>Code Course</th> 
+                    <th>Moderation Setter Question</th> 
+                    <th>Preparation Printing</th> 
+                    <th>Scripts Evaluation (Final/Incourse/Assignment/Practical)</th> 
+                    <th>Script Evaluation Practical</th> 
+                    <th>Tabulation (Students)</th> 
+                    <th>Honorarium Total / (Chair/Member)</th> 
+                    <th>Committee Member</th> 
+                    <th>Stencil (Pages)</th> 
+                    <th>Other Details</th>
+                </tr> 
+            </thead> 
+            <tbody> 
+                {% for item in report_data %} 
+                <tr> 
+                    <td>{{ loop.index }}</td> 
                     <td>
-                        {% if item.details.question_preparations %}Question Preparation, {% endif %}
-                        {% if item.details.script_evaluations %}Script Evaluation, {% endif %}
-                        {% if item.details.practical_exams %}Practical Exam, {% endif %}
-                        {% if item.details.viva_exams %}Viva Exam, {% endif %}
-                        {% if item.details.tabulations %}Tabulation, {% endif %}
-                        {% if item.details.answer_sheet_reviews %}Answer Sheet Review, {% endif %}
-                        {% if item.details.other_remunerations %}Others{% endif %}
+                        {{ item.teacher.name }},<br> 
+                        {{ item.teacher.designation }}. Dept. of {{ item.teacher.department }}, DU
+                    </td> 
+                    <td>
+                        {# List all course codes for any activity #}
+                        {% for qp in item.details.question_preparations %}{{ all_courses[qp.course_id].course_code if qp.course_id in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for qm in item.details.question_moderations %}{{ all_courses[qm.course_id].course_code if qm.course_id in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for se in item.details.script_evaluations %}{{ all_courses[se.course_id].course_code if se.course_id in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for pe in item.details.practical_exams %}{{ all_courses[pe.course_id].course_code if pe.course_id in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for ve in item.details.viva_exams %}{{ all_courses[ve.course_id].course_code if ve.course_id in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for tab in item.details.tabulations %}{{ all_courses[tab.course_id].course_code if tab.course_id in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for asr in item.details.answer_sheet_reviews %}{{ all_courses[asr.course_id].course_code if asr.course_id in all_courses else 'N/A' }}<br>{% endfor %}
+                    </td> 
+                    <td>
+                        {% for qm in item.details.question_moderations %}
+                            {% if qm.team_member_count == 1 %}1st Examiner{% elif qm.team_member_count == 2 %}2nd Examiner{% elif qm.team_member_count == 3 %}3rd Examiner{% endif %}<br>
+                            {{ qm.question_count }} Sets<br>
+                        {% endfor %}
+                    </td> 
+                    <td>
+                        {% for or_item in item.details.other_remunerations %}
+                            {% if or_item.remuneration_type == 'Question Preparation and Printing' %}
+                                {{ or_item.details }}<br>
+                                {% if or_item.page_count %}({{ or_item.page_count }} Pages){% endif %}<br>
+                            {% endif %}
+                        {% endfor %}
+                    </td> 
+                    <td>
+                        {% for se in item.details.script_evaluations %}
+                            {% if se.script_type == 'Final' %}{{ se.script_count }} Final<br>{% endif %}
+                            {% if se.script_type == 'Incourse' %}{{ se.script_count }} Incourse<br>{% endif %}
+                            {% if se.script_type == 'Assignment' %}{{ se.script_count }} Assignment<br>{% endif %}
+                        {% endfor %}
+                    </td> 
+                    <td>
+                        {% for pe in item.details.practical_exams %}
+                            {{ pe.day_count }} Days ({{ pe.student_count }} Students)<br>
+                        {% endfor %}
+                    </td> 
+                    <td>
+                        {% for tab in item.details.tabulations %}
+                            {{ tab.student_count }}<br>
+                        {% endfor %}
+                    </td> 
+                    <td>
+                        {% for or_item in item.details.other_remunerations %}
+                            {% if or_item.remuneration_type == 'Exam Committee Honorium' %}
+                                {{ or_item.details }}<br>
+                            {% endif %}
+                        {% endfor %}
+                    </td> 
+                    <td>
+                        {% for or_item in item.details.other_remunerations %}
+                            {% if or_item.remuneration_type == 'Exam Committee Honorium' %}
+                                {% if 'Member' in or_item.details %}Member{% elif 'Chair' in or_item.details %}Chair{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </td> 
+                    <td>
+                        {% for or_item in item.details.other_remunerations %}
+                            {% if or_item.remuneration_type == 'Stencil' %}
+                                {{ or_item.page_count }} Pages<br>
+                            {% endif %}
+                        {% endfor %}
                     </td>
-                    <td>_____________</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    <td>
+                        {% for or_item in item.details.other_remunerations %}
+                            {# Display other remuneration types not specifically handled in their own columns #}
+                            {% if or_item.remuneration_type not in ['Exam Committee Honorium', 'Stencil', 'Question Preparation and Printing'] %}
+                                {{ or_item.remuneration_type }}: {{ or_item.details }}
+                                {% if or_item.page_count %}({{ or_item.page_count }} Pages){% endif %}<br>
+                            {% endif %}
+                        {% endfor %}
+                        {% for ve in item.details.viva_exams %}
+                            Viva Exam: {{ all_courses[ve.course_id].course_code if ve.course_id in all_courses else 'N/A' }} ({{ ve.student_count }} Students)<br>
+                        {% endfor %}
+                         {% for asr in item.details.answer_sheet_reviews %}
+                            Answer Sheet Review: {{ all_courses[asr.course_id].course_code if asr.course_id in all_courses else 'N/A' }} ({{ asr.answer_sheet_count }} Answer Sheets)<br>
+                        {% endfor %}
+                    </td>
+                </tr> 
+                {% endfor %} 
+            </tbody> 
+        </table> 
         
-        <div style="margin-top: 30px; text-align: right;">
-            <div style="margin-top: 40px;">
-                <div style="border-top: 1px solid #000; width: 200px; margin-left: auto; text-align: center; padding-top: 10px;">
-                    (Professor {{ chairman.name }})<br>
-                    Chairman, {{ semester.semester_name }} Examination Committee, {{ semester.year }}<br>
-                    Department of Computer Science & Engineering,<br>
-                    University of Dhaka
-                </div>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
+        <div class="signature"> 
+            <p>Mobile No. of the Exam Committee Chairman: {{ chairman.mobile_no if chairman.mobile_no else 'N/A' }}</p>
+            <div> 
+                ({{ chairman.name if chairman else 'N/A' }})<br> 
+                {{ chairman.designation if chairman else 'N/A' }}, Chairman, {{ semester.semester_name }} Examination Committee, {{ semester.year }}<br> 
+                Department of Computer Science & Engineering,<br> 
+                University of Dhaka<br>
+                সভাপতি<br>
+                পরীক্ষা কমিটি,<br>
+                বর্ষ বি, এসসি, (অনাস।)<br>
+                কম্পিউটার সায়েন্স এন্ড ইঞ্জিনিয়ারিং নিজাগ<br>
+                ঢাকা বিশ্ববিদ্যালয়
+            </div> 
+        </div> 
+    </body> 
+    </html> 
+    """ 
     
-    template = Template(html_template)
-    chairman = db.query(models.Teacher).filter(models.Teacher.id == semester.chairman_id).first()
+    template = Template(html_template) 
+    chairman = db.query(models.Teacher).filter(models.Teacher.id == semester.chairman_id).first() 
     
-    html_content = template.render(
-        semester=semester,
-        chairman=chairman,
-        report_data=report_data
-    )
+    html_content = template.render( 
+        semester=semester, 
+        chairman=chairman, 
+        report_data=report_data,
+        all_courses=all_courses # Pass all courses to the template
+    ) 
     
-    # Generate PDF
-    pdf_buffer = BytesIO()
-    HTML(string=html_content).write_pdf(pdf_buffer)
-    pdf_buffer.seek(0)
+    # Generate PDF 
+    pdf_buffer = BytesIO() 
+    HTML(string=html_content).write_pdf(pdf_buffer) 
+    pdf_buffer.seek(0) 
     
-    # Return base64 encoded PDF
-    pdf_base64 = base64.b64encode(pdf_buffer.read()).decode('utf-8')
+    # Return base64 encoded PDF 
+    pdf_base64 = base64.b64encode(pdf_buffer.read()).decode('utf-8') 
     
-    return {
-        "pdf_data": pdf_base64,
-        "filename": f"cumulative_report_{semester.year}_{semester.semester_name}.pdf"
+    return { 
+        "pdf_data": pdf_base64, 
+        "filename": f"cumulative_report_{semester.year}_{semester.semester_name}.pdf" 
     }

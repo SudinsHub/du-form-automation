@@ -162,45 +162,69 @@ def get_teacher_remuneration(db: Session, teacher_id: int, semester_id: int):
     result = {
         "question_preparations": db.query(models.QuestionPreparation).filter(
             and_(models.QuestionPreparation.teacher_id == teacher_id,
-                 models.QuestionPreparation.exam_semester_id == semester_id)
+                    models.QuestionPreparation.exam_semester_id == semester_id)
         ).all(),
         "question_moderations": db.query(models.QuestionModeration).filter(
             and_(models.QuestionModeration.teacher_id == teacher_id,
-                 models.QuestionModeration.exam_semester_id == semester_id)
+                    models.QuestionModeration.exam_semester_id == semester_id)
         ).all(),
         "script_evaluations": db.query(models.ScriptEvaluation).filter(
             and_(models.ScriptEvaluation.teacher_id == teacher_id,
-                 models.ScriptEvaluation.exam_semester_id == semester_id)
+                    models.ScriptEvaluation.exam_semester_id == semester_id)
         ).all(),
         "practical_exams": db.query(models.PracticalExam).filter(
             and_(models.PracticalExam.teacher_id == teacher_id,
-                 models.PracticalExam.exam_semester_id == semester_id)
+                    models.PracticalExam.exam_semester_id == semester_id)
         ).all(),
         "viva_exams": db.query(models.VivaExam).filter(
             and_(models.VivaExam.teacher_id == teacher_id,
-                 models.VivaExam.exam_semester_id == semester_id)
+                    models.VivaExam.exam_semester_id == semester_id)
         ).all(),
         "tabulations": db.query(models.Tabulation).filter(
             and_(models.Tabulation.teacher_id == teacher_id,
-                 models.Tabulation.exam_semester_id == semester_id)
+                    models.Tabulation.exam_semester_id == semester_id)
         ).all(),
         "answer_sheet_reviews": db.query(models.AnswerSheetReview).filter(
             and_(models.AnswerSheetReview.teacher_id == teacher_id,
-                 models.AnswerSheetReview.exam_semester_id == semester_id)
+                    models.AnswerSheetReview.exam_semester_id == semester_id)
         ).all(),
         "other_remunerations": db.query(models.OtherRemuneration).filter(
             and_(models.OtherRemuneration.teacher_id == teacher_id,
-                 models.OtherRemuneration.exam_semester_id == semester_id)
+                    models.OtherRemuneration.exam_semester_id == semester_id)
         ).all(),
     }
     return result
 
 def get_cumulative_report(db: Session, semester_id: int):
-    # Get all teachers who have submitted for this semester
-    teachers = db.query(models.Teacher).join(models.QuestionPreparation).filter(
-        models.QuestionPreparation.exam_semester_id == semester_id
-    ).distinct().all()
-    
+    # Get all teachers who have submitted for this semester by performing outer joins
+    # and checking if they have any activity in the given semester.
+    teachers = db.query(models.Teacher).outerjoin(
+        models.QuestionPreparation, models.Teacher.id == models.QuestionPreparation.teacher_id
+    ).outerjoin(
+        models.QuestionModeration, models.Teacher.id == models.QuestionModeration.teacher_id
+    ).outerjoin(
+        models.ScriptEvaluation, models.Teacher.id == models.ScriptEvaluation.teacher_id
+    ).outerjoin(
+        models.PracticalExam, models.Teacher.id == models.PracticalExam.teacher_id
+    ).outerjoin(
+        models.VivaExam, models.Teacher.id == models.VivaExam.teacher_id
+    ).outerjoin(
+        models.Tabulation, models.Teacher.id == models.Tabulation.teacher_id
+    ).outerjoin(
+        models.AnswerSheetReview, models.Teacher.id == models.AnswerSheetReview.teacher_id
+    ).outerjoin(
+        models.OtherRemuneration, models.Teacher.id == models.OtherRemuneration.teacher_id
+    ).filter(
+        (models.QuestionPreparation.exam_semester_id == semester_id) |
+        (models.QuestionModeration.exam_semester_id == semester_id) |
+        (models.ScriptEvaluation.exam_semester_id == semester_id) |
+        (models.PracticalExam.exam_semester_id == semester_id) |
+        (models.VivaExam.exam_semester_id == semester_id) |
+        (models.Tabulation.exam_semester_id == semester_id) |
+        (models.AnswerSheetReview.exam_semester_id == semester_id) |
+        (models.OtherRemuneration.exam_semester_id == semester_id)
+    ).distinct(models.Teacher.id).all() # Use distinct on Teacher.id to get unique teachers
+
     report_data = []
     for teacher in teachers:
         teacher_data = get_teacher_remuneration(db, teacher.id, semester_id)

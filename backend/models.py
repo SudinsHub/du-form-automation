@@ -1,6 +1,9 @@
+# models.py (Complete Code)
 from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from database import Base  # Import Base from database.py
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base() # Assuming Base is defined and imported from database.py
 
 class Teacher(Base):
     __tablename__ = "teachers"
@@ -159,14 +162,3 @@ class OtherRemuneration(Base):
     # Relationships
     teacher = relationship("Teacher", back_populates="other_remunerations")
     exam_semester = relationship("ExamSemester")
-
-class RemunerationRates(Base):
-    __tablename__ = "remuneration_rates"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    activity_type = Column(String)
-    sub_type = Column(String)
-    rate_per_unit = Column(Float)
-    unit_description = Column(String)
-    effective_from = Column(Date)
-    effective_to = Column(Date, nullable=True)
