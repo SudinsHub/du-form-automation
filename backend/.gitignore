@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / test / various files
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.coverage
+
+# Environments
+venv/
+env/
+.env
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Dependencies
+# Pip-installed packages
+# requirements.txt is kept, but the installed packages themselves aren't committed
+# If you are using poetry or pipenv, you might add their lock/specific files here
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE Files
+.vscode/ # VS Code settings
+.idea/ # PyCharm/IntelliJ settings
+*.swp # vim
+
+# Temporary Files
+*.log
+*.tmp

@@ -10,16 +10,14 @@ const api = axios.create({
 })
 
 export interface Teacher {
-  id: number
+  id: string
   name: string
   designation: string
   department: string
-  address?: string
   mobile_no?: string
 }
 
 export interface Course {
-  id: number
   course_code: string
   course_title: string
   credits: number
@@ -37,7 +35,7 @@ export interface ExamSemester {
 }
 
 export interface RemunerationSubmission {
-  teacher_id: number
+  teacher_id: string
   exam_semester_id: number
   question_preparations: QuestionPreparationData[]
   question_moderations: QuestionModerationData[]
@@ -50,40 +48,40 @@ export interface RemunerationSubmission {
 }
 
 export interface QuestionPreparationData {
-  course_id: number
+  course_code: string
   section_type: string
 }
 
 export interface QuestionModerationData {
-  course_id: number
+  course_code: string
   question_count: number
   team_member_count: number
 }
 
 export interface ScriptEvaluationData {
-  course_id: number
+  course_code: string
   script_type: string
   script_count: number
 }
 
 export interface PracticalExamData {
-  course_id: number
+  course_code: string
   student_count: number
   day_count: number
 }
 
 export interface VivaExamData {
-  course_id: number
+  course_code: string
   student_count: number
 }
 
 export interface TabulationData {
-  course_id: number
+  course_code: string
   student_count: number
 }
 
 export interface AnswerSheetReviewData {
-  course_id: number
+  course_code: string
   answer_sheet_count: number
 }
 
@@ -93,10 +91,14 @@ export interface OtherRemunerationData {
   page_count?: number
 }
 
+
+
 // API functions
 export const teacherApi = {
   getAll: () => api.get<Teacher[]>("/teachers"),
-  create: (data: Omit<Teacher, "id">) => api.post<Teacher>("/teachers", data),
+  create: (data: Teacher) => api.post<Teacher>("/teachers", data),
+  webImport: (data: { name: string }) => api.get(`/search-teachers?query=${encodeURIComponent(data.name)}`),
+
 }
 
 export const courseApi = {
@@ -123,7 +125,7 @@ export const reportApi = {
 }
 
 export const exportApi = {
-  exportIndividualPDF: (data: { teacher_id: number; exam_semester_id: number }) =>
+  exportIndividualPDF: (data: { teacher_id: string; exam_semester_id: number }) =>
     api.post("/export/pdf/individual", data),
   exportCumulativePDF: (data: { exam_semester_id: number }) => api.post("/export/pdf/cumulative", data),
 }

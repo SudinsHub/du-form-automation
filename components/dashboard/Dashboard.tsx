@@ -10,7 +10,7 @@ import { semesterApi, reportApi, exportApi, type ExamSemester } from "@/services
 
 interface ReportData {
   teacher: {
-    id: number
+    id: string
     name: string
     designation: string
     department: string
@@ -107,7 +107,7 @@ export default function Dashboard() {
   }
 
 
-  const exportFormPDF = async (teacher_id:number, semester_id:number) => {
+  const exportFormPDF = async (teacher_id:string, semester_id:number) => {
     try {
       const response = await exportApi.exportIndividualPDF({
         teacher_id: teacher_id,

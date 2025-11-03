@@ -45,7 +45,7 @@ def generate_individual_pdf(db: Session, data):
                 পরীক্ষকের নাম: জনাব/ডঃ/অধ্যাপক <span class="filled-data">{{ teacher.name }}</span>
             </div>
             <div class="flex-container" style="margin-top: 5px;">
-                পদবী সহকারে ঠিকানা <span class="filled-data">{{ teacher.designation }}, {{ teacher.address }}</span>
+                পদবী সহকারে ঠিকানা <span class="filled-data">{{ teacher.designation }}, {{ teacher.department }}, University of Dhaka</span>
             </div>
         </div>
         
@@ -179,7 +179,7 @@ def generate_individual_pdf(db: Session, data):
                 <div class="signature-line"></div>
                 পরীক্ষক/নিরীক্ষক/সন্নিবেশকের স্বাক্ষর <br>
                 বিভাগ: {{ teacher.department }} <br>
-                বর্তমান ঠিকানা: {{ teacher.address }}
+                বর্তমান ঠিকানা: {{ teacher.department }}, University of Dhaka
             </div>
         </div>
         
@@ -319,13 +319,13 @@ def generate_cumulative_pdf(db: Session, data):
                     </td> 
                     <td>
                         {# List all course codes for any activity #}
-                        {% for qp in item.details.question_preparations %}{{ all_courses[qp.course_id].course_code if qp.course_id in all_courses else 'N/A' }}<br>{% endfor %}
-                        {% for qm in item.details.question_moderations %}{{ all_courses[qm.course_id].course_code if qm.course_id in all_courses else 'N/A' }}<br>{% endfor %}
-                        {% for se in item.details.script_evaluations %}{{ all_courses[se.course_id].course_code if se.course_id in all_courses else 'N/A' }}<br>{% endfor %}
-                        {% for pe in item.details.practical_exams %}{{ all_courses[pe.course_id].course_code if pe.course_id in all_courses else 'N/A' }}<br>{% endfor %}
-                        {% for ve in item.details.viva_exams %}{{ all_courses[ve.course_id].course_code if ve.course_id in all_courses else 'N/A' }}<br>{% endfor %}
-                        {% for tab in item.details.tabulations %}{{ all_courses[tab.course_id].course_code if tab.course_id in all_courses else 'N/A' }}<br>{% endfor %}
-                        {% for asr in item.details.answer_sheet_reviews %}{{ all_courses[asr.course_id].course_code if asr.course_id in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for qp in item.details.question_preparations %}{{ all_courses[qp.course_code].course_code if qp.course_code in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for qm in item.details.question_moderations %}{{ all_courses[qm.course_code].course_code if qm.course_code in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for se in item.details.script_evaluations %}{{ all_courses[se.course_code].course_code if se.course_code in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for pe in item.details.practical_exams %}{{ all_courses[pe.course_code].course_code if pe.course_code in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for ve in item.details.viva_exams %}{{ all_courses[ve.course_code].course_code if ve.course_code in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for tab in item.details.tabulations %}{{ all_courses[tab.course_code].course_code if tab.course_code in all_courses else 'N/A' }}<br>{% endfor %}
+                        {% for asr in item.details.answer_sheet_reviews %}{{ all_courses[asr.course_code].course_code if asr.course_code in all_courses else 'N/A' }}<br>{% endfor %}
                     </td> 
                     <td>
                         {% for qm in item.details.question_moderations %}
@@ -388,10 +388,10 @@ def generate_cumulative_pdf(db: Session, data):
                             {% endif %}
                         {% endfor %}
                         {% for ve in item.details.viva_exams %}
-                            Viva Exam: {{ all_courses[ve.course_id].course_code if ve.course_id in all_courses else 'N/A' }} ({{ ve.student_count }} Students)<br>
+                            Viva Exam: {{ all_courses[ve.course_code].course_code if ve.course_code in all_courses else 'N/A' }} ({{ ve.student_count }} Students)<br>
                         {% endfor %}
                          {% for asr in item.details.answer_sheet_reviews %}
-                            Answer Sheet Review: {{ all_courses[asr.course_id].course_code if asr.course_id in all_courses else 'N/A' }} ({{ asr.answer_sheet_count }} Answer Sheets)<br>
+                            Answer Sheet Review: {{ all_courses[asr.course_code].course_code if asr.course_code in all_courses else 'N/A' }} ({{ asr.answer_sheet_count }} Answer Sheets)<br>
                         {% endfor %}
                     </td>
                 </tr> 

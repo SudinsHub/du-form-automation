@@ -4,23 +4,21 @@ from datetime import date
 
 # Teacher schemas
 class TeacherBase(BaseModel):
+    id: str # added this line
     name: str
     designation: str
     department: str
-    address: Optional[str] = None
     mobile_no: Optional[str] = None
 
 class TeacherCreate(TeacherBase):
     pass
 
 class Teacher(TeacherBase):
-    id: int
-    
-    class Config:
-        from_attributes = True
+    pass
 
 # Course schemas
 class CourseBase(BaseModel):
+    dept: str
     course_code: str
     course_title: str
     credits: float
@@ -30,10 +28,7 @@ class CourseCreate(CourseBase):
     pass
 
 class Course(CourseBase):
-    id: int
-    
-    class Config:
-        from_attributes = True
+    pass
 
 # ExamSemester schemas
 class ExamSemesterBase(BaseModel):
@@ -55,34 +50,34 @@ class ExamSemester(ExamSemesterBase):
 
 # Remuneration schemas
 class QuestionPreparationData(BaseModel):
-    course_id: int
+    course_code: str
     section_type: str
 
 class QuestionModerationData(BaseModel):
-    course_id: int
+    course_code: str
     question_count: int
     team_member_count: int
 
 class ScriptEvaluationData(BaseModel):
-    course_id: int
+    course_code: str
     script_type: str
     script_count: int
 
 class PracticalExamData(BaseModel):
-    course_id: int
+    course_code: str
     student_count: int
     day_count: int
 
 class VivaExamData(BaseModel):
-    course_id: int
+    course_code: str
     student_count: int
 
 class TabulationData(BaseModel):
-    course_id: int
+    course_code: str
     student_count: int
 
 class AnswerSheetReviewData(BaseModel):
-    course_id: int
+    course_code: str
     answer_sheet_count: int
 
 class OtherRemunerationData(BaseModel):
@@ -91,7 +86,7 @@ class OtherRemunerationData(BaseModel):
     page_count: Optional[int] = None
 
 class RemunerationSubmission(BaseModel):
-    teacher_id: int
+    teacher_id: str
     exam_semester_id: int
     question_preparations: List[QuestionPreparationData] = []
     question_moderations: List[QuestionModerationData] = []
@@ -103,7 +98,7 @@ class RemunerationSubmission(BaseModel):
     other_remunerations: List[OtherRemunerationData] = []
 
 class PDFExportRequest(BaseModel):
-    teacher_id: int
+    teacher_id: str
     exam_semester_id: int
 
 class CumulativeReportRequest(BaseModel):

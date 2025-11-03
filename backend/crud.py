@@ -4,6 +4,9 @@ import models
 import schemas
 from typing import List
 
+def get_teacher_by_id(db: Session, teacher_id: str):
+    return db.query(models.Teacher).filter(models.Teacher.id == teacher_id).first()
+
 def get_teachers(db: Session):
     return db.query(models.Teacher).all()
 

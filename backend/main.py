@@ -108,7 +108,7 @@ def submit_remuneration(data: schemas.RemunerationSubmission, db: Session = Depe
     return crud.submit_remuneration(db, data)
 
 @app.get("/api/v1/remuneration/teacher/{teacher_id}/semester/{semester_id}")
-def get_teacher_remuneration(teacher_id: int, semester_id: int, db: Session = Depends(get_db)):
+def get_teacher_remuneration(teacher_id: str, semester_id: int, db: Session = Depends(get_db)):
     return crud.get_teacher_remuneration(db, teacher_id, semester_id)
 
 # Reports endpoints
@@ -126,6 +126,17 @@ def export_individual_pdf(data: schemas.PDFExportRequest, db: Session = Depends(
 def export_cumulative_pdf(data: schemas.CumulativeReportRequest, db: Session = Depends(get_db)):
     from pdf_generator import generate_cumulative_pdf
     return generate_cumulative_pdf(db, data)
+
+@app.get("/api/v1/search-teachers")
+async def search_teachers(query: str, db: Session = Depends(get_db)):
+    from utils.scrapper import teacher_parser
+    found_teachers = await teacher_parser(query)
+    for teacher_data in found_teachers:
+        existing_teacher = crud.get_teacher_by_id(db, teacher_data["code"])
+        teacher_data["isNew"] = existing_teacher is None
+
+    return found_teachers
+
 
 # Initialize sample data
 @app.post("/api/v1/init-data")

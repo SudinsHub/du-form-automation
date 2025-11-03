@@ -34,7 +34,7 @@ import {
 import DynamicSection from "./DynamicSection"
 
 interface FormData {
-  teacher_id: number
+  teacher_id: string
   exam_semester_id: number
   exam_year: number
 }
@@ -52,15 +52,15 @@ export default function RemunerationForm() {
   const [loading, setLoading] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
 
-  const [questionPreparations, setQuestionPreparations] = useState([{ course_id: 0, section_type: "Full" }])
+  const [questionPreparations, setQuestionPreparations] = useState([{ course_code: '', section_type: "Full" }])
   const [questionModerations, setQuestionModerations] = useState([
-    { course_id: 0, question_count: 0, team_member_count: 0 },
+    { course_code: '', question_count: 0, team_member_count: 0 },
   ])
-  const [scriptEvaluations, setScriptEvaluations] = useState([{ course_id: 0, script_type: "Final", script_count: 0 }])
-  const [practicalExams, setPracticalExams] = useState([{ course_id: 0, student_count: 0, day_count: 0 }])
-  const [vivaExams, setVivaExams] = useState([{ course_id: 0, student_count: 0 }])
-  const [tabulations, setTabulations] = useState([{ course_id: 0, student_count: 0 }])
-  const [answerSheetReviews, setAnswerSheetReviews] = useState([{ course_id: 0, answer_sheet_count: 0 }])
+  const [scriptEvaluations, setScriptEvaluations] = useState([{ course_code: '', script_type: "Final", script_count: 0 }])
+  const [practicalExams, setPracticalExams] = useState([{ course_code: '', student_count: 0, day_count: 0 }])
+  const [vivaExams, setVivaExams] = useState([{ course_code: '', student_count: 0 }])
+  const [tabulations, setTabulations] = useState([{ course_code: '', student_count: 0 }])
+  const [answerSheetReviews, setAnswerSheetReviews] = useState([{ course_code: '', answer_sheet_count: 0 }])
   const [otherRemunerations, setOtherRemunerations] = useState([
     { remuneration_type: "Exam Committee Honorium", details: "", page_count: 0 },
   ])
@@ -106,7 +106,7 @@ export default function RemunerationForm() {
 
   useEffect(() => {
     if (watchedTeacherId) {
-      const teacher = teachers.find((t) => t.id === Number(watchedTeacherId))
+      const teacher = teachers.find((t) => t.id === watchedTeacherId)
       setSelectedTeacher(teacher || null)
     }
   }, [watchedTeacherId, teachers])
@@ -139,13 +139,13 @@ export default function RemunerationForm() {
       const submissionData: RemunerationSubmission = {
         teacher_id: data.teacher_id,
         exam_semester_id: selectedSemester.id,
-        question_preparations: questionPreparations.filter((item) => item.course_id > 0),
-        question_moderations: questionModerations.filter((item) => item.course_id > 0),
-        script_evaluations: scriptEvaluations.filter((item) => item.course_id > 0),
-        practical_exams: practicalExams.filter((item) => item.course_id > 0),
-        viva_exams: vivaExams.filter((item) => item.course_id > 0),
-        tabulations: tabulations.filter((item) => item.course_id > 0),
-        answer_sheet_reviews: answerSheetReviews.filter((item) => item.course_id > 0),
+        question_preparations: questionPreparations.filter((item) => item.course_code !== ''),
+        question_moderations: questionModerations.filter((item) => item.course_code !== ''),
+        script_evaluations: scriptEvaluations.filter((item) => item.course_code !== ''),
+        practical_exams: practicalExams.filter((item) => item.course_code !== ''),
+        viva_exams: vivaExams.filter((item) => item.course_code !== ''),
+        tabulations: tabulations.filter((item) => item.course_code !== ''),
+        answer_sheet_reviews: answerSheetReviews.filter((item) => item.course_code !== ''),
         other_remunerations: otherRemunerations.filter((item) => item.remuneration_type && item.details),
       }
 
@@ -193,7 +193,7 @@ export default function RemunerationForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="teacher_id">পরীক্ষকের নাম</Label>
-              <Select onValueChange={(value) => setValue("teacher_id", Number(value))}>
+              <Select onValueChange={(value) => setValue("teacher_id", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="পরীক্ষক নির্বাচন করুন" />
                 </SelectTrigger>
@@ -233,7 +233,7 @@ export default function RemunerationForm() {
                 <strong>পদবী:</strong> {selectedTeacher.designation}
               </p>
               <p>
-                <strong>ঠিকানা:</strong> {selectedTeacher.address}
+                <strong>ঠিকানা:</strong> {selectedTeacher.department}, University of Dhaka
               </p>
             </div>
           )}
@@ -265,13 +265,13 @@ export default function RemunerationForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>কোর্স</Label>
-              <Select onValueChange={(value) => updateItem(index, "course_id", Number(value))}>
+              <Select onValueChange={(value) => updateItem(index, "course_code", Number(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="কোর্স নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
                   {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
+                    <SelectItem key={course.course_code} value={course.course_code}>
                       {course.course_code} - {course.course_title}
                     </SelectItem>
                   ))}
@@ -304,13 +304,13 @@ export default function RemunerationForm() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>কোর্স</Label>
-              <Select onValueChange={(value) => updateItem(index, "course_id", Number(value))}>
+              <Select onValueChange={(value) => updateItem(index, "course_code", Number(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="কোর্স নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
                   {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
+                    <SelectItem key={course.course_code} value={course.course_code}>
                       {course.course_code} - {course.course_title}
                     </SelectItem>
                   ))}
@@ -349,13 +349,13 @@ export default function RemunerationForm() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>কোর্স</Label>
-              <Select onValueChange={(value) => updateItem(index, "course_id", Number(value))}>
+              <Select onValueChange={(value) => updateItem(index, "course_code", Number(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="কোর্স নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
                   {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
+                    <SelectItem key={course.course_code} value={course.course_code}>
                       {course.course_code} - {course.course_title}
                     </SelectItem>
                   ))}
@@ -400,13 +400,13 @@ export default function RemunerationForm() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>কোর্স</Label>
-              <Select onValueChange={(value) => updateItem(index, "course_id", Number(value))}>
+              <Select onValueChange={(value) => updateItem(index, "course_code", Number(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="কোর্স নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
                   {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
+                    <SelectItem key={course.course_code} value={course.course_code}>
                       {course.course_code} - {course.course_title}
                     </SelectItem>
                   ))}
@@ -445,13 +445,13 @@ export default function RemunerationForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>কোর্স</Label>
-              <Select onValueChange={(value) => updateItem(index, "course_id", Number(value))}>
+              <Select onValueChange={(value) => updateItem(index, "course_code", Number(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="কোর্স নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
                   {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
+                    <SelectItem key={course.course_code} value={course.course_code}>
                       {course.course_code} - {course.course_title}
                     </SelectItem>
                   ))}
@@ -481,13 +481,13 @@ export default function RemunerationForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>কোর্স</Label>
-              <Select onValueChange={(value) => updateItem(index, "course_id", Number(value))}>
+              <Select onValueChange={(value) => updateItem(index, "course_code", Number(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="কোর্স নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
                   {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
+                    <SelectItem key={course.course_code} value={course.course_code}>
                       {course.course_code} - {course.course_title}
                     </SelectItem>
                   ))}
@@ -517,13 +517,13 @@ export default function RemunerationForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>কোর্স</Label>
-              <Select onValueChange={(value) => updateItem(index, "course_id", Number(value))}>
+              <Select onValueChange={(value) => updateItem(index, "course_code", Number(value))}>
                 <SelectTrigger>
                   <SelectValue placeholder="কোর্স নির্বাচন করুন" />
                 </SelectTrigger>
                 <SelectContent>
                   {courses.map((course) => (
-                    <SelectItem key={course.id} value={course.id.toString()}>
+                    <SelectItem key={course.course_code} value={course.course_code}>
                       {course.course_code} - {course.course_title}
                     </SelectItem>
                   ))}

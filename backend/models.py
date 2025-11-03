@@ -1,18 +1,15 @@
 # models.py (Complete Code)
 from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base() # Assuming Base is defined and imported from database.py
-
+#import base from database.py
+from database import Base
 class Teacher(Base):
     __tablename__ = "teachers"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True)
     name = Column(String, index=True)
     designation = Column(String)
     department = Column(String)
-    address = Column(Text)
     mobile_no = Column(String)
     
     # Relationships
@@ -34,7 +31,7 @@ class ExamSemester(Base):
     exam_start_date = Column(Date)
     exam_end_date = Column(Date)
     result_publish_date = Column(Date)
-    chairman_id = Column(Integer, ForeignKey("teachers.id"))
+    chairman_id = Column(String, ForeignKey("teachers.id"))
     
     # Relationships
     chairman = relationship("Teacher")
@@ -42,8 +39,7 @@ class ExamSemester(Base):
 class Course(Base):
     __tablename__ = "courses"
     
-    id = Column(Integer, primary_key=True, index=True)
-    course_code = Column(String, unique=True, index=True)
+    course_code = Column(String, primary_key=True, unique=True, index=True)
     course_title = Column(String)
     credits = Column(Float)
     department = Column(String)
@@ -52,9 +48,9 @@ class QuestionPreparation(Base):
     __tablename__ = "question_preparations"
     
     id = Column(Integer, primary_key=True, index=True)
-    teacher_id = Column(Integer, ForeignKey("teachers.id"))
+    teacher_id = Column(String, ForeignKey("teachers.id"))
     exam_semester_id = Column(Integer, ForeignKey("exam_semesters.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    course_code = Column(String, ForeignKey("courses.course_code"))
     section_type = Column(String)  # Full/Half
     
     # Relationships
@@ -66,9 +62,9 @@ class QuestionModeration(Base):
     __tablename__ = "question_moderations"
     
     id = Column(Integer, primary_key=True, index=True)
-    teacher_id = Column(Integer, ForeignKey("teachers.id"))
+    teacher_id = Column(String, ForeignKey("teachers.id"))
     exam_semester_id = Column(Integer, ForeignKey("exam_semesters.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    course_code = Column(String, ForeignKey("courses.course_code"))
     question_count = Column(Integer)
     team_member_count = Column(Integer)
     
@@ -81,9 +77,9 @@ class ScriptEvaluation(Base):
     __tablename__ = "script_evaluations"
     
     id = Column(Integer, primary_key=True, index=True)
-    teacher_id = Column(Integer, ForeignKey("teachers.id"))
+    teacher_id = Column(String, ForeignKey("teachers.id"))
     exam_semester_id = Column(Integer, ForeignKey("exam_semesters.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    course_code = Column(String, ForeignKey("courses.course_code"))
     script_type = Column(String)  # Final/Incourse/Assignment/Presentation/Practical
     script_count = Column(Integer)
     
@@ -96,9 +92,9 @@ class PracticalExam(Base):
     __tablename__ = "practical_exams"
     
     id = Column(Integer, primary_key=True, index=True)
-    teacher_id = Column(Integer, ForeignKey("teachers.id"))
+    teacher_id = Column(String, ForeignKey("teachers.id"))
     exam_semester_id = Column(Integer, ForeignKey("exam_semesters.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    course_code = Column(String, ForeignKey("courses.course_code"))
     student_count = Column(Integer)
     day_count = Column(Integer)
     
@@ -111,9 +107,9 @@ class VivaExam(Base):
     __tablename__ = "viva_exams"
     
     id = Column(Integer, primary_key=True, index=True)
-    teacher_id = Column(Integer, ForeignKey("teachers.id"))
+    teacher_id = Column(String, ForeignKey("teachers.id"))
     exam_semester_id = Column(Integer, ForeignKey("exam_semesters.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    course_code = Column(String, ForeignKey("courses.course_code"))
     student_count = Column(Integer)
     
     # Relationships
@@ -125,9 +121,9 @@ class Tabulation(Base):
     __tablename__ = "tabulations"
     
     id = Column(Integer, primary_key=True, index=True)
-    teacher_id = Column(Integer, ForeignKey("teachers.id"))
+    teacher_id = Column(String, ForeignKey("teachers.id"))
     exam_semester_id = Column(Integer, ForeignKey("exam_semesters.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    course_code = Column(String, ForeignKey("courses.course_code"))
     student_count = Column(Integer)
     
     # Relationships
@@ -139,9 +135,9 @@ class AnswerSheetReview(Base):
     __tablename__ = "answer_sheet_reviews"
     
     id = Column(Integer, primary_key=True, index=True)
-    teacher_id = Column(Integer, ForeignKey("teachers.id"))
+    teacher_id = Column(String, ForeignKey("teachers.id"))
     exam_semester_id = Column(Integer, ForeignKey("exam_semesters.id"))
-    course_id = Column(Integer, ForeignKey("courses.id"))
+    course_code = Column(String, ForeignKey("courses.course_code"))
     answer_sheet_count = Column(Integer)
     
     # Relationships
@@ -153,7 +149,7 @@ class OtherRemuneration(Base):
     __tablename__ = "other_remunerations"
     
     id = Column(Integer, primary_key=True, index=True)
-    teacher_id = Column(Integer, ForeignKey("teachers.id"))
+    teacher_id = Column(String, ForeignKey("teachers.id"))
     exam_semester_id = Column(Integer, ForeignKey("exam_semesters.id"))
     remuneration_type = Column(String)  # Exam Committee Honorium/Stencil/Question Setter/Question Preparation and Printing
     details = Column(Text)
