@@ -1,8 +1,8 @@
-# models.py (Complete Code)
+# models.py
 from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Text
 from sqlalchemy.orm import relationship
-#import base from database.py
 from database import Base
+
 class Teacher(Base):
     __tablename__ = "teachers"
     

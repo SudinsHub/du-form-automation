@@ -2,12 +2,17 @@ from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import get_db, engine, Base
-import models  # This imports all models and registers them with Base
-import crud
+import models
 import schemas
 from typing import List
 import uvicorn
 from contextlib import asynccontextmanager
+
+# Import services
+from services.teacher_service import TeacherService
+from services.course_service import CourseService
+from services.exam_semester_service import ExamSemesterService
+from services.remuneration_service import RemunerationService
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,7 +41,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="DU Examination Remuneration System", 
-    version="1.0.0",
+    version="2.0.0",
+    description="Repository + Service Layer Pattern Implementation",
     lifespan=lifespan
 )
 
@@ -49,30 +55,128 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-
-# Teachers endpoints
+# ============================================
+# TEACHERS ENDPOINTS
+# ============================================
 @app.get("/api/v1/teachers", response_model=List[schemas.Teacher])
 def get_teachers(db: Session = Depends(get_db)):
-    return crud.get_teachers(db)
+    """Get all teachers"""
+    try:
+        service = TeacherService(db)
+        return service.get_all_teachers()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/v1/teachers", response_model=schemas.Teacher)
+@app.get("/api/v1/teachers/{teacher_id}", response_model=schemas.Teacher)
+def get_teacher(teacher_id: str, db: Session = Depends(get_db)):
+    """Get a specific teacher by ID"""
+    try:
+        service = TeacherService(db)
+        return service.get_teacher_by_id(teacher_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/teachers-by-name/{teacher_name}", response_model=schemas.Teacher)
+def get_teacher(teacher_name: str, db: Session = Depends(get_db)):
+    try:
+        service = TeacherService(db)
+        return service.get_teacher_by_name(teacher_name)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/teachers", response_model=schemas.Teacher, status_code=201)
 def create_teacher(teacher: schemas.TeacherCreate, db: Session = Depends(get_db)):
-    return crud.create_teacher(db, teacher)
+    """Create a new teacher"""
+    try:
+        service = TeacherService(db)
+        return service.create_teacher(teacher)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# Courses endpoints
+@app.get("/api/v1/teachers/department/{department}", response_model=List[schemas.Teacher])
+def get_teachers_by_department(department: str, db: Session = Depends(get_db)):
+    """Get all teachers in a specific department"""
+    try:
+        service = TeacherService(db)
+        return service.get_teachers_by_department(department)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================
+# COURSES ENDPOINTS
+# ============================================
 @app.get("/api/v1/courses", response_model=List[schemas.Course])
 def get_courses(db: Session = Depends(get_db)):
-    return crud.get_courses(db)
+    """Get all courses"""
+    try:
+        service = CourseService(db)
+        return service.get_all_courses()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/v1/courses", response_model=schemas.Course)
+@app.get("/api/v1/courses/{course_code}", response_model=schemas.Course)
+def get_course(course_code: str, db: Session = Depends(get_db)):
+    """Get a specific course by code"""
+    try:
+        service = CourseService(db)
+        return service.get_course_by_code(course_code)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/courses", response_model=schemas.Course, status_code=201)
 def create_course(course: schemas.CourseCreate, db: Session = Depends(get_db)):
-    return crud.create_course(db, course)
+    """Create a new course"""
+    try:
+        service = CourseService(db)
+        return service.create_course(course)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# Exam Semesters endpoints
+@app.get("/api/v1/courses/department/{department}", response_model=List[schemas.Course])
+def get_courses_by_department(department: str, db: Session = Depends(get_db)):
+    """Get all courses for a specific department"""
+    try:
+        service = CourseService(db)
+        return service.get_courses_by_department(department)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================
+# EXAM SEMESTERS ENDPOINTS
+# ============================================
 @app.get("/api/v1/semesters", response_model=List[schemas.ExamSemester])
 def get_semesters(db: Session = Depends(get_db)):
-    return crud.get_semesters(db)
+    """Get all exam semesters"""
+    try:
+        service = ExamSemesterService(db)
+        return service.get_all_semesters()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/semesters/{semester_id}", response_model=schemas.ExamSemester)
+def get_semester(semester_id: int, db: Session = Depends(get_db)):
+    """Get a specific semester by ID"""
+    try:
+        service = ExamSemesterService(db)
+        return service.get_semester_by_id(semester_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/semesters/by-name-year", response_model=schemas.ExamSemester)
 def get_semester_by_name_year(
@@ -80,11 +184,17 @@ def get_semester_by_name_year(
     year: int = Query(...),
     db: Session = Depends(get_db)
 ):
-    print(f"Fetching semester with year: {year} and name: '{name}'")
-    semester = crud.get_semester_by_year_and_name(db, year, name)
-    if not semester:
-        raise HTTPException(status_code=404, detail="Semester not found")
-    return semester
+    """Get semester by year and name"""
+    try:
+        service = ExamSemesterService(db)
+        semester = service.get_semester_by_year_and_name(year, name)
+        if not semester:
+            raise HTTPException(status_code=404, detail="Semester not found")
+        return semester
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/semesters/get-or-create", response_model=schemas.ExamSemester)
 def get_or_create_semester(
@@ -92,81 +202,117 @@ def get_or_create_semester(
     year: int = Query(...),
     db: Session = Depends(get_db)
 ):
-    print(f"Getting or creating semester with year: {year} and name: '{name}'")
-    semester = crud.get_semester_by_year_and_name(db, year, name)
-    if not semester:
-        semester = crud.create_semester(db, schemas.ExamSemesterCreate(year=year, semester_name=name))
-    return semester
+    """Get existing semester or create new one"""
+    try:
+        service = ExamSemesterService(db)
+        return service.get_or_create_semester(year, name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/api/v1/semesters", response_model=schemas.ExamSemester)
+@app.post("/api/v1/semesters", response_model=schemas.ExamSemester, status_code=201)
 def create_semester(semester: schemas.ExamSemesterCreate, db: Session = Depends(get_db)):
-    return crud.create_semester(db, semester)
+    """Create a new semester"""
+    try:
+        service = ExamSemesterService(db)
+        return service.create_semester(semester)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# Remuneration submission
-@app.post("/api/v1/remuneration/submit")
+# ============================================
+# REMUNERATION ENDPOINTS
+# ============================================
+@app.post("/api/v1/remuneration/submit", status_code=201)
 def submit_remuneration(data: schemas.RemunerationSubmission, db: Session = Depends(get_db)):
-    return crud.submit_remuneration(db, data)
+    """Submit remuneration data for a teacher"""
+    try:
+        service = RemunerationService(db)
+        return service.submit_remuneration(data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/remuneration/teacher/{teacher_id}/semester/{semester_id}")
 def get_teacher_remuneration(teacher_id: str, semester_id: int, db: Session = Depends(get_db)):
-    return crud.get_teacher_remuneration(db, teacher_id, semester_id)
+    """Get remuneration data for a specific teacher and semester"""
+    try:
+        service = RemunerationService(db)
+        return service.get_teacher_remuneration(teacher_id, semester_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# Reports endpoints
+# ============================================
+# REPORTS ENDPOINTS
+# ============================================
 @app.get("/api/v1/reports/cumulative/{semester_id}")
 def get_cumulative_report(semester_id: int, db: Session = Depends(get_db)):
-    return crud.get_cumulative_report(db, semester_id)
+    """Generate cumulative report for a semester"""
+    try:
+        service = RemunerationService(db)
+        return service.get_cumulative_report(semester_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# PDF Export endpoints
+# ============================================
+# PDF EXPORT ENDPOINTS
+# ============================================
 @app.post("/api/v1/export/pdf/individual")
 def export_individual_pdf(data: schemas.PDFExportRequest, db: Session = Depends(get_db)):
-    from pdf_generator import generate_individual_pdf
-    return generate_individual_pdf(db, data)
+    """Export individual teacher remuneration as PDF"""
+    try:
+        from pdf_generator import generate_individual_pdf
+        return generate_individual_pdf(db, data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/export/pdf/cumulative")
 def export_cumulative_pdf(data: schemas.CumulativeReportRequest, db: Session = Depends(get_db)):
-    from pdf_generator import generate_cumulative_pdf
-    return generate_cumulative_pdf(db, data)
+    """Export cumulative report as PDF"""
+    try:
+        from pdf_generator import generate_cumulative_pdf
+        return generate_cumulative_pdf(db, data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
+# ============================================
+# SEARCH ENDPOINTS
+# ============================================
 @app.get("/api/v1/search-teachers")
 async def search_teachers(query: str, db: Session = Depends(get_db)):
-    from utils.scrapper import teacher_parser
-    found_teachers = await teacher_parser(query)
-    for teacher_data in found_teachers:
-        existing_teacher = crud.get_teacher_by_id(db, teacher_data["code"])
-        teacher_data["isNew"] = existing_teacher is None
-
-    return found_teachers
-
-
-# Initialize sample data
-@app.post("/api/v1/init-data")
-def initialize_sample_data(db: Session = Depends(get_db)):
-    # Verify tables exist before trying to use them
-    from sqlalchemy import inspect
-    inspector = inspect(engine)
-    existing_tables = inspector.get_table_names()
-    
-    print(f"Tables available: {existing_tables}")
-    
-    if 'question_preparations' not in existing_tables:
-        print("ERROR: question_preparations table not found!")
-        print("Available tables:", existing_tables)
-        print("Trying to create tables again...")
+    """Search for teachers from external source"""
+    try:
+        from utils.scrapper import teacher_parser
+        from services.teacher_service import TeacherService
         
-        # Try to create tables again
-        Base.metadata.create_all(bind=engine)
+        found_teachers = await teacher_parser(query)
+        teacher_service = TeacherService(db)
         
-        # Check again
-        inspector = inspect(engine)
-        existing_tables = inspector.get_table_names()
-        print(f"Tables after recreation: {existing_tables}")
-        
-        if 'question_preparations' not in existing_tables:
-            raise HTTPException(status_code=500, detail="Failed to create required tables")
-    
-    from sample_data import create_sample_data
-    create_sample_data(db)
-    return {"message": "Sample data created successfully"}
+        for teacher_data in found_teachers:
+            # Check if teacher exists using service layer
+            teacher_exists = teacher_service.teacher_exists(teacher_data["code"])
+            teacher_data["isNew"] = not teacher_exists
+
+        return found_teachers
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# HEALTH CHECK
+# ============================================
+@app.get("/health")
+def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "version": "2.0.0"}
+
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
