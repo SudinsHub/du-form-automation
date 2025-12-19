@@ -271,8 +271,9 @@ def get_cumulative_report(semester_id: int, db: Session = Depends(get_db)):
 def export_individual_pdf(data: schemas.PDFExportRequest, db: Session = Depends(get_db)):
     """Export individual teacher remuneration as PDF"""
     try:
-        from pdf_generator import generate_individual_pdf
-        return generate_individual_pdf(db, data)
+        from pdf_generator import PDFGeneratorFactory
+        generator = PDFGeneratorFactory.create_generator("individual", db)
+        return generator.generate(data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -280,8 +281,9 @@ def export_individual_pdf(data: schemas.PDFExportRequest, db: Session = Depends(
 def export_cumulative_pdf(data: schemas.CumulativeReportRequest, db: Session = Depends(get_db)):
     """Export cumulative report as PDF"""
     try:
-        from pdf_generator import generate_cumulative_pdf
-        return generate_cumulative_pdf(db, data)
+        from pdf_generator import PDFGeneratorFactory
+        generator = PDFGeneratorFactory.create_generator("cumulative", db)
+        return generator.generate(data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
