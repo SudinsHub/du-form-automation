@@ -28,7 +28,7 @@ class ExamSemesterService(BaseService):
             raise ValueError(f"Semester with ID {semester_id} not found")
         return semester
     
-    def get_semester_by_year_and_name(
+    def get_semester_by_year_and_name( # get_by_year_and_name
         self, year: int, semester_name: str
     ) -> Optional[schemas.ExamSemester]:
         """
@@ -47,7 +47,7 @@ class ExamSemesterService(BaseService):
         - Dates must be logical (start < end < publish)
         """
         # Check if semester already exists
-        existing = self.semester_repo.get_by_year_and_name(
+        existing = self.get_semester_by_year_and_name(
             semester_data.year, semester_data.semester_name
         )
         if existing:
@@ -67,7 +67,7 @@ class ExamSemesterService(BaseService):
         Get existing semester or create new one if it doesn't exist.
         Business rule: Ensure semester uniqueness by year+name.
         """
-        semester = self.semester_repo.get_by_year_and_name(year, semester_name)
+        semester = self.get_semester_by_year_and_name(year, semester_name)
         
         if not semester:
             semester = self.semester_repo.create(

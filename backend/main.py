@@ -7,6 +7,8 @@ import schemas
 from typing import List
 import uvicorn
 from contextlib import asynccontextmanager
+from fastapi import APIRouter, UploadFile, File, Depends, Form
+from sqlalchemy.orm import Session
 
 # Import services
 from services.teacher_service import TeacherService
@@ -167,17 +169,6 @@ def get_semesters(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/v1/semesters/{semester_id}", response_model=schemas.ExamSemester)
-def get_semester(semester_id: int, db: Session = Depends(get_db)):
-    """Get a specific semester by ID"""
-    try:
-        service = ExamSemesterService(db)
-        return service.get_semester_by_id(semester_id)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.get("/api/v1/semesters/by-name-year", response_model=schemas.ExamSemester)
 def get_semester_by_name_year(
     name: str = Query(...),
@@ -210,6 +201,18 @@ def get_or_create_semester(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/semesters/{semester_id}", response_model=schemas.ExamSemester)
+def get_semester(semester_id: int, db: Session = Depends(get_db)):
+    """Get a specific semester by ID"""
+    try:
+        service = ExamSemesterService(db)
+        return service.get_semester_by_id(semester_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/v1/semesters", response_model=schemas.ExamSemester, status_code=201)
 def create_semester(semester: schemas.ExamSemesterCreate, db: Session = Depends(get_db)):
@@ -313,6 +316,21 @@ def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "version": "2.0.0"}
 
+
+@app.post("/api/remuneration/import-excel")
+async def import_excel_remuneration(
+    file: UploadFile = File(...),
+    semester_name: str = Form(...),
+    exam_year: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    service = RemunerationService(db)
+    result = await service.process_excel_import(file, semester_name, exam_year)
+    
+    if result["code"] == 404:
+        raise HTTPException(status_code=404, detail=result)
+    
+    return result
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

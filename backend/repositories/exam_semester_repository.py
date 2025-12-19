@@ -48,4 +48,6 @@ class ExamSemesterRepository(BaseRepository[models.ExamSemester]):
                 self.model.semester_name == semester_name
             )
         ).first()
+    
+    
 

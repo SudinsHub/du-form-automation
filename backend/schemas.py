@@ -18,7 +18,6 @@ class Teacher(TeacherBase):
 
 # Course schemas
 class CourseBase(BaseModel):
-    dept: str
     course_code: str
     course_title: str
     credits: float

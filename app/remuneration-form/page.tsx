@@ -3,11 +3,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import RemunerationForm from "@/components/forms/RemunerationForm";
+import RemunerationFormContainer from "@/components/forms/RemunerationFormContainer";
+import { useRemunerationStore } from "@/stores/useRemunerationStore"
 
 export default function FormPage() {
   const [loading, setLoading] = useState(false);
-
+  // extract teacher_id from     window.open(`/remuneration/form?teacher_id=${encodeURIComponent(teacher_id)}`)
+  const teacherId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('teacher_id') : null;
+  const entry = teacherId ? useRemunerationStore(state => state.getEntry(teacherId)) : null;
+  console.log(entry); // logging null
+  
   const initializeSampleData = async () => {
     try {
       setLoading(true);
@@ -29,7 +34,18 @@ export default function FormPage() {
         </Button>
       </CardHeader>
       <CardContent>
-        <RemunerationForm />
+        {entry ? (
+          <RemunerationFormContainer
+            initialData={entry.initialData}
+            preSelectedTeacherId={entry.teacher_id}
+            preSelectedSemester={{
+              name: entry.semester_name,
+              year: entry.exam_year,
+            }}
+          />
+        ) : (
+          <RemunerationFormContainer/>
+        )}
       </CardContent>
     </Card>
   );

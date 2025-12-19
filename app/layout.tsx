@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { GraduationCap, FileText, BarChart3, Upload } from 'lucide-react';
+import { GraduationCap, FileText, BarChart3, Upload, Table } from 'lucide-react';
 import { cn } from "@/lib/utils"; // optional: tailwind merge helper if you have one
 import "@/app/globals.css";
 
@@ -13,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     { href: "/remuneration-form", label: "শিক্ষক সম্মানী ফর্ম", icon: FileText },
     { href: "/dashboard", label: "ড্যাশবোর্ড", icon: BarChart3 },
     { href: "/import", label: "শিক্ষক ইম্পোর্ট", icon: Upload },
+    { href: "/excel-import", label: "এক্সেল ইম্পোর্ট", icon: Table },
   ];
 
   return (
