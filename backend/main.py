@@ -328,6 +328,8 @@ async def import_excel_remuneration(
 ):
     service = RemunerationService(db)
     result = await service.process_excel_import(file, semester_name, exam_year)
+    # log the result for debugging
+    print(f"Excel import result: {result}")
     
     if result["code"] == 404:
         raise HTTPException(status_code=404, detail=result)

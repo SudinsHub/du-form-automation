@@ -505,15 +505,55 @@ class CumulativePDFGenerator(PDFGenerator):
                 <meta charset="utf-8">
                 <title>Cumulative Remuneration Report</title>
                 <style>
-                    body { font-family: 'Arial', sans-serif; margin: 20px; font-size: 10px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                    th, td { border: 1px solid #000; padding: 4px; text-align: left; vertical-align: top; }
-                    th { background-color: #f0f0f0; font-weight: bold; }
-                    .header { text-align: center; font-weight: bold; margin-bottom: 15px; }
-                    .subheader { text-align: center; margin-bottom: 10px; }
-                    .section-title { font-weight: bold; margin-top: 10px; margin-bottom: 5px; }
-                    .signature { margin-top: 50px; text-align: right; }
-                    .signature div { border-top: 1px solid #000; width: 250px; margin-left: auto; text-align: center; padding-top: 5px; }
+                    body { 
+                        font-family: 'Arial', sans-serif; 
+                        margin: 10px 10px 10px 5px;  /* top right bottom left */
+                        font-size: 10px; 
+                    }
+                    table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin-top: 10px;
+                        font-size: 8px;  /* Make table text smaller if needed */
+                    }
+                    th, td { 
+                        border: 1px solid #000; 
+                        padding: 3px;  /* Reduced padding */
+                        text-align: left; 
+                        vertical-align: top; 
+                        word-wrap: break-word;  /* Allow text to wrap */
+                    }
+                    th { 
+                        background-color: #f0f0f0; 
+                        font-weight: bold; 
+                    }
+                    .header { 
+                        text-align: center; 
+                        font-weight: bold; 
+                        margin-bottom: 15px; 
+                    }
+                    .subheader { 
+                        text-align: center; 
+                        margin-bottom: 10px; 
+                    }
+                    .section-title { 
+                        font-weight: bold; 
+                        margin-top: 10px; 
+                        margin-bottom: 5px; 
+                    }
+                    .signature { 
+                        margin-top: 50px; 
+                        text-align: right; 
+                    }
+                    .signature div { 
+                        border-top: 1px solid #000; 
+                        width: 250px; 
+                        margin-left: auto; 
+                        text-align: center; 
+                        padding-top: 5px; 
+                    }
+                    
+
                 </style>
             </head>
             <body>
@@ -542,6 +582,7 @@ class CumulativePDFGenerator(PDFGenerator):
                             <th>Honorarium Total / (Chair/Member)</th>
                             <th>Committee Member</th>
                             <th>Stencil (Pages)</th>
+                            <th>Answer Sheet Review</th>
                             <th>Other Details</th>
                         </tr>
                     </thead>
@@ -616,6 +657,11 @@ class CumulativePDFGenerator(PDFGenerator):
                                 {% endfor %}
                             </td>
                             <td>
+                               {% for asr in item.details.answer_sheet_reviews %}
+                                    {{ all_courses[asr.course_code].course_code if asr.course_code in all_courses else 'N/A' }} ({{ asr.answer_sheet_count }} Answer Sheets)<br>
+                                {% endfor %}
+                            </td>
+                            <td>
                                 {% for or_item in item.details.other_remunerations %}
                                     {# Display other remuneration types not specifically handled in their own columns #}
                                     {% if or_item.remuneration_type not in ['Exam Committee Honorium', 'Stencil', 'Question Preparation and Printing'] %}
@@ -626,9 +672,7 @@ class CumulativePDFGenerator(PDFGenerator):
                                 {% for ve in item.details.viva_exams %}
                                     Viva Exam: {{ all_courses[ve.course_code].course_code if ve.course_code in all_courses else 'N/A' }} ({{ ve.student_count }} Students)<br>
                                 {% endfor %}
-                                {% for asr in item.details.answer_sheet_reviews %}
-                                    Answer Sheet Review: {{ all_courses[asr.course_code].course_code if asr.course_code in all_courses else 'N/A' }} ({{ asr.answer_sheet_count }} Answer Sheets)<br>
-                                {% endfor %}
+ 
                             </td>
                         </tr>
                         {% endfor %}
@@ -636,10 +680,10 @@ class CumulativePDFGenerator(PDFGenerator):
                 </table>
 
                 <div class="signature">
-                    <p>Mobile No. of the Exam Committee Chairman: {{ chairman.mobile_no if chairman.mobile_no else 'N/A' }}</p>
+                    <p>Mobile No. of the Exam Committee Chairman: {{ chairman.mobile_no if chairman.mobile_no else '' }}</p>
                     <div>
-                        ({{ chairman.name if chairman else 'N/A' }})<br>
-                        {{ chairman.designation if chairman else 'N/A' }}, Chairman, {{ semester.semester_name }} Examination Committee, {{ semester.year }}<br>
+                        ({{ chairman.name if chairman else '' }})<br>
+                        {{ chairman.designation if chairman else '' }}, Chairman, {{ semester.semester_name }} Examination Committee, {{ semester.year }}<br>
                         Department of Computer Science & Engineering,<br>
                         University of Dhaka<br>
                         সভাপতি<br>

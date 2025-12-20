@@ -11,7 +11,6 @@ export default function FormPage() {
   // extract teacher_id from     window.open(`/remuneration/form?teacher_id=${encodeURIComponent(teacher_id)}`)
   const teacherId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('teacher_id') : null;
   const entry = teacherId ? useRemunerationStore(state => state.getEntry(teacherId)) : null;
-  console.log(entry); // logging null
   
   const initializeSampleData = async () => {
     try {
