@@ -28,9 +28,6 @@ export default function FormPage() {
     <Card>
       <CardHeader className="flex justify-between items-center">
         <CardTitle>পরীক্ষা সম্মানী বিল ফর্ম</CardTitle>
-        <Button onClick={initializeSampleData} variant="outline" disabled={loading}>
-          {loading ? "Loading..." : "Initialize Sample Data"}
-        </Button>
       </CardHeader>
       <CardContent>
         {entry ? (

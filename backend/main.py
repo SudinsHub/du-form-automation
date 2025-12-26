@@ -9,6 +9,8 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import APIRouter, UploadFile, File, Depends, Form
 from sqlalchemy.orm import Session
+from auth import authenticate_user, create_access_token, get_current_super_admin, get_password_hash
+from fastapi.security import OAuth2PasswordRequestForm
 
 # Import services
 from services.teacher_service import TeacherService
@@ -58,10 +60,34 @@ app.add_middleware(
 )
 
 # ============================================
+# AUTH ENDPOINTS
+# ============================================
+@app.post("/api/v1/token", response_model=schemas.Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    access_token = create_access_token(data={"sub": user.username})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/api/v1/users", response_model=schemas.User, status_code=201)
+def create_super_admin(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    # Only allow creating super admin if no users exist (for initial setup)
+    existing_users = db.query(models.User).count()
+    if existing_users > 0:
+        raise HTTPException(status_code=403, detail="Super admin already exists")
+    hashed_password = get_password_hash(user.password)
+    db_user = models.User(username=user.username, hashed_password=hashed_password, is_super_admin=True)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+# ============================================
 # TEACHERS ENDPOINTS
 # ============================================
 @app.get("/api/v1/teachers", response_model=List[schemas.Teacher])
-def get_teachers(db: Session = Depends(get_db)):
+def get_teachers(current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Get all teachers"""
     try:
         service = TeacherService(db)
@@ -70,7 +96,7 @@ def get_teachers(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/teachers/{teacher_id}", response_model=schemas.Teacher)
-def get_teacher(teacher_id: str, db: Session = Depends(get_db)):
+def get_teacher(teacher_id: str, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Get a specific teacher by ID"""
     try:
         service = TeacherService(db)
@@ -91,7 +117,7 @@ def get_teacher(teacher_name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/teachers", response_model=schemas.Teacher, status_code=201)
-def create_teacher(teacher: schemas.TeacherCreate, db: Session = Depends(get_db)):
+def create_teacher(teacher: schemas.TeacherCreate, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Create a new teacher"""
     try:
         service = TeacherService(db)
@@ -102,7 +128,7 @@ def create_teacher(teacher: schemas.TeacherCreate, db: Session = Depends(get_db)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/teachers/department/{department}", response_model=List[schemas.Teacher])
-def get_teachers_by_department(department: str, db: Session = Depends(get_db)):
+def get_teachers_by_department(department: str, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Get all teachers in a specific department"""
     try:
         service = TeacherService(db)
@@ -116,7 +142,7 @@ def get_teachers_by_department(department: str, db: Session = Depends(get_db)):
 # COURSES ENDPOINTS
 # ============================================
 @app.get("/api/v1/courses", response_model=List[schemas.Course])
-def get_courses(db: Session = Depends(get_db)):
+def get_courses(current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Get all courses"""
     try:
         service = CourseService(db)
@@ -125,7 +151,7 @@ def get_courses(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/courses/{course_code}", response_model=schemas.Course)
-def get_course(course_code: str, db: Session = Depends(get_db)):
+def get_course(course_code: str, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Get a specific course by code"""
     try:
         service = CourseService(db)
@@ -136,7 +162,7 @@ def get_course(course_code: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/courses", response_model=schemas.Course, status_code=201)
-def create_course(course: schemas.CourseCreate, db: Session = Depends(get_db)):
+def create_course(course: schemas.CourseCreate, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Create a new course"""
     try:
         service = CourseService(db)
@@ -147,7 +173,7 @@ def create_course(course: schemas.CourseCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/courses/department/{department}", response_model=List[schemas.Course])
-def get_courses_by_department(department: str, db: Session = Depends(get_db)):
+def get_courses_by_department(department: str, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Get all courses for a specific department"""
     try:
         service = CourseService(db)
@@ -161,7 +187,7 @@ def get_courses_by_department(department: str, db: Session = Depends(get_db)):
 # EXAM SEMESTERS ENDPOINTS
 # ============================================
 @app.get("/api/v1/semesters", response_model=List[schemas.ExamSemester])
-def get_semesters(db: Session = Depends(get_db)):
+def get_semesters(current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Get all exam semesters"""
     try:
         service = ExamSemesterService(db)
@@ -173,7 +199,7 @@ def get_semesters(db: Session = Depends(get_db)):
 def get_semester_by_name_year(
     name: str = Query(...),
     year: int = Query(...),
-    db: Session = Depends(get_db)
+    current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)
 ):
     """Get semester by year and name"""
     try:
@@ -191,7 +217,7 @@ def get_semester_by_name_year(
 def get_or_create_semester(
     name: str = Query(...),
     year: int = Query(...),
-    db: Session = Depends(get_db)
+    current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)
 ):
     """Get existing semester or create new one"""
     try:
@@ -203,7 +229,7 @@ def get_or_create_semester(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/semesters/{semester_id}", response_model=schemas.ExamSemester)
-def get_semester(semester_id: int, db: Session = Depends(get_db)):
+def get_semester(semester_id: int, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Get a specific semester by ID"""
     try:
         service = ExamSemesterService(db)
@@ -215,7 +241,7 @@ def get_semester(semester_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/api/v1/semesters", response_model=schemas.ExamSemester, status_code=201)
-def create_semester(semester: schemas.ExamSemesterCreate, db: Session = Depends(get_db)):
+def create_semester(semester: schemas.ExamSemesterCreate, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Create a new semester"""
     try:
         service = ExamSemesterService(db)
@@ -229,7 +255,7 @@ def create_semester(semester: schemas.ExamSemesterCreate, db: Session = Depends(
 # REMUNERATION ENDPOINTS
 # ============================================
 @app.post("/api/v1/remuneration/submit", status_code=201)
-def submit_remuneration(data: schemas.RemunerationSubmission, db: Session = Depends(get_db)):
+def submit_remuneration(data: schemas.RemunerationSubmission, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Submit remuneration data for a teacher"""
     try:
         service = RemunerationService(db)
@@ -240,7 +266,7 @@ def submit_remuneration(data: schemas.RemunerationSubmission, db: Session = Depe
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/remuneration/teacher/{teacher_id}/semester/{semester_id}")
-def get_teacher_remuneration(teacher_id: str, semester_id: int, db: Session = Depends(get_db)):
+def get_teacher_remuneration(teacher_id: str, semester_id: int, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Get remuneration data for a specific teacher and semester"""
     try:
         service = RemunerationService(db)
@@ -254,7 +280,7 @@ def get_teacher_remuneration(teacher_id: str, semester_id: int, db: Session = De
 # REPORTS ENDPOINTS
 # ============================================
 @app.get("/api/v1/reports/cumulative/{semester_id}")
-def get_cumulative_report(semester_id: int, db: Session = Depends(get_db)):
+def get_cumulative_report(semester_id: int, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Generate cumulative report for a semester"""
     try:
         service = RemunerationService(db)
@@ -268,7 +294,7 @@ def get_cumulative_report(semester_id: int, db: Session = Depends(get_db)):
 # PDF EXPORT ENDPOINTS
 # ============================================
 @app.post("/api/v1/export/pdf/individual")
-def export_individual_pdf(data: schemas.PDFExportRequest, db: Session = Depends(get_db)):
+def export_individual_pdf(data: schemas.PDFExportRequest, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Export individual teacher remuneration as PDF"""
     try:
         from pdf_generator import PDFGeneratorFactory
@@ -278,7 +304,7 @@ def export_individual_pdf(data: schemas.PDFExportRequest, db: Session = Depends(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/v1/export/pdf/cumulative")
-def export_cumulative_pdf(data: schemas.CumulativeReportRequest, db: Session = Depends(get_db)):
+def export_cumulative_pdf(data: schemas.CumulativeReportRequest, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Export cumulative report as PDF"""
     try:
         from pdf_generator import PDFGeneratorFactory
@@ -291,7 +317,7 @@ def export_cumulative_pdf(data: schemas.CumulativeReportRequest, db: Session = D
 # SEARCH ENDPOINTS
 # ============================================
 @app.get("/api/v1/search-teachers")
-async def search_teachers(query: str, db: Session = Depends(get_db)):
+async def search_teachers(query: str, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
     """Search for teachers from external source"""
     try:
         from utils.scrapper import teacher_parser
@@ -324,13 +350,13 @@ async def import_excel_remuneration(
     file: UploadFile = File(...),
     semester_name: str = Form(...),
     exam_year: int = Form(...),
-    db: Session = Depends(get_db)
+    current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)
 ):
     service = RemunerationService(db)
     result = await service.process_excel_import(file, semester_name, exam_year)
     # log the result for debugging
     print(f"Excel import result: {result}")
-    
+
     if result["code"] == 404:
         raise HTTPException(status_code=404, detail=result)
     

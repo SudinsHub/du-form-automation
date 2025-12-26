@@ -102,3 +102,28 @@ class PDFExportRequest(BaseModel):
 
 class CumulativeReportRequest(BaseModel):
     exam_semester_id: int
+
+# Auth schemas
+class UserBase(BaseModel):
+    username: str
+    is_super_admin: bool = False
+
+class UserCreate(UserBase):
+    password: str
+
+class User(UserBase):
+    id: int
+    
+    class Config:
+        from_attributes = True
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+class TokenData(BaseModel):
+    username: Optional[str] = None

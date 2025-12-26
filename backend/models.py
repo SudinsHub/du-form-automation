@@ -1,7 +1,8 @@
 # models.py
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, Text, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
+from datetime import datetime
 
 class Teacher(Base):
     __tablename__ = "teachers"
@@ -158,3 +159,12 @@ class OtherRemuneration(Base):
     # Relationships
     teacher = relationship("Teacher", back_populates="other_remunerations")
     exam_semester = relationship("ExamSemester")
+
+class User(Base):
+    __tablename__ = "users"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    is_super_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
