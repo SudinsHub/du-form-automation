@@ -1,9 +1,13 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Search } from "lucide-react";
+import { Upload, Search, Mail } from "lucide-react";
 import { useState } from "react";
 import { teacherApi, Teacher } from "@/services/api";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ImportedTeacher {
   code: string;
@@ -17,6 +21,9 @@ export default function ImportPage() {
     const [importedTeachers, setImportedTeachers] = useState<ImportedTeacher[]>([]);
     const [searchName, setSearchName] = useState<string>("");
     const [isFetching, setIsFetching] = useState<boolean>(false);
+    const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+    const [selectedTeacherForInvite, setSelectedTeacherForInvite] = useState<ImportedTeacher | null>(null);
+    const [inviteEmail, setInviteEmail] = useState("");
     const handleSearch = async () => {
         if (!searchName) return;
         try {
@@ -50,6 +57,31 @@ export default function ImportPage() {
             alert("Error saving teachers");
         } finally {
             setIsFetching(false);
+        }
+    };
+
+    const handleInviteTeacher = async () => {
+        if (!selectedTeacherForInvite || !inviteEmail) return;
+        try {
+            const response = await fetch(`http://localhost:8000/api/v1/teachers/${selectedTeacherForInvite.code}/invite`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("auth-storage") ? JSON.parse(localStorage.getItem("auth-storage")!).state.token : ""}`,
+                },
+                body: JSON.stringify({ teacher_id: selectedTeacherForInvite.code, email: inviteEmail }),
+            });
+            if (response.ok) {
+                alert("Invitation sent successfully");
+                setInviteDialogOpen(false);
+                setInviteEmail("");
+                setSelectedTeacherForInvite(null);
+            } else {
+                alert("Failed to send invitation");
+            }
+        } catch (error) {
+            console.error("Error sending invitation:", error);
+            alert("Error sending invitation");
         }
     };
 
@@ -108,7 +140,52 @@ export default function ImportPage() {
                             >
                                 Save
                             </button>
-                        : "Existing"}</td>
+                        : 
+                            <div className="flex gap-2">
+                                <span className="text-gray-500">Existing</span>
+                                <Dialog open={inviteDialogOpen && selectedTeacherForInvite?.code === teacher.code} onOpenChange={setInviteDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                setSelectedTeacherForInvite(teacher);
+                                                setInviteDialogOpen(true);
+                                            }}
+                                        >
+                                            <Mail className="h-4 w-4 mr-1" />
+                                            Invite
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Invite Teacher</DialogTitle>
+                                            <DialogDescription>
+                                                Send an invitation email to {teacher.name} for account setup.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="email" className="text-right">
+                                                    Email
+                                                </Label>
+                                                <Input
+                                                    id="email"
+                                                    value={inviteEmail}
+                                                    onChange={(e) => setInviteEmail(e.target.value)}
+                                                    className="col-span-3"
+                                                    type="email"
+                                                    placeholder="teacher@example.com"
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button onClick={handleInviteTeacher}>Send Invitation</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        }</td>
                     </tr>
                 ))}
             </tbody>

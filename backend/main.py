@@ -9,7 +9,7 @@ import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import APIRouter, UploadFile, File, Depends, Form
 from sqlalchemy.orm import Session
-from auth import authenticate_user, create_access_token, get_current_super_admin, get_password_hash
+from auth import authenticate_teacher, authenticate_user, create_access_token, get_current_super_admin, get_current_teacher, get_password_hash
 from fastapi.security import OAuth2PasswordRequestForm
 
 # Import services
@@ -17,6 +17,7 @@ from services.teacher_service import TeacherService
 from services.course_service import CourseService
 from services.exam_semester_service import ExamSemesterService
 from services.remuneration_service import RemunerationService
+from services.invite_service import InviteService
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -63,12 +64,42 @@ app.add_middleware(
 # AUTH ENDPOINTS
 # ============================================
 @app.post("/api/v1/token", response_model=schemas.Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login_for_access_token(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
-    access_token = create_access_token(data={"sub": user.username})
+
+    access_token = create_access_token(
+        data={
+            "sub": user.username,
+            "role": "super_admin"
+        }
+    )
     return {"access_token": access_token, "token_type": "bearer"}
+
+# teacher login
+@app.post("/api/v1/teacher/token", response_model=schemas.Token)
+async def teacher_login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    teacher_auth = authenticate_teacher(db, form_data.username, form_data.password)
+    if not teacher_auth:
+        raise HTTPException(status_code=400, detail="Incorrect username or password for teacher login.")
+
+    access_token = create_access_token(
+        data={
+            "sub": teacher_auth.username,
+            "role": "teacher",
+            "teacher_id": teacher_auth.teacher_id
+        }
+    )
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 @app.post("/api/v1/users", response_model=schemas.User, status_code=201)
 def create_super_admin(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -82,12 +113,37 @@ def create_super_admin(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_user)
     return db_user
+# ============================================
+# TEACHER INVITE ENDPOINTS
+# ============================================
+@app.post("/api/v1/teachers/{teacher_id}/invite", response_model=schemas.TeacherInvite, status_code=201)
+def invite_teacher(teacher_id: str, invite_data: schemas.TeacherInviteCreate, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
+    """Send invitation email to teacher for account setup"""
+    try:
+        if invite_data.teacher_id != teacher_id:
+            raise HTTPException(status_code=400, detail="Teacher ID mismatch")
+        service = InviteService(db)
+        return service.create_invite(invite_data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to send invitation")
 
+@app.post("/api/v1/activate", response_model=schemas.TeacherAuth, status_code=201)
+def activate_teacher_account(activation_data: schemas.TeacherActivation, db: Session = Depends(get_db)):
+    """Activate teacher account using invitation token"""
+    try:
+        service = InviteService(db)
+        return service.activate_account(activation_data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to activate account")
 # ============================================
 # TEACHERS ENDPOINTS
 # ============================================
 @app.get("/api/v1/teachers", response_model=List[schemas.Teacher])
-def get_teachers(current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
+def get_teachers(db: Session = Depends(get_db)):
     """Get all teachers"""
     try:
         service = TeacherService(db)
@@ -96,7 +152,7 @@ def get_teachers(current_user: models.User = Depends(get_current_super_admin), d
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/teachers/{teacher_id}", response_model=schemas.Teacher)
-def get_teacher(teacher_id: str, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
+def get_teacher(teacher_id: str, db: Session = Depends(get_db)):
     """Get a specific teacher by ID"""
     try:
         service = TeacherService(db)
@@ -137,12 +193,40 @@ def get_teachers_by_department(department: str, current_user: models.User = Depe
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+# ============================================
+# TEACHER AUTH ENDPOINTS
+# ============================================
+@app.post("/api/v1/teacher/remuneration/submit", status_code=201)
+def submit_teacher_remuneration(data: schemas.RemunerationSubmission, current_teacher: models.Teacher = Depends(get_current_teacher), db: Session = Depends(get_db)):
+    """Submit remuneration data for the authenticated teacher"""
+    try:
+        if data.teacher_id != current_teacher.id:
+            raise HTTPException(status_code=403, detail="Cannot submit for another teacher")
+        service = RemunerationService(db)
+        return service.submit_remuneration(data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to submit remuneration")
 
+@app.get("/api/v1/teacher/remuneration")
+def get_teacher_remuneration(current_teacher: models.Teacher = Depends(get_current_teacher), db: Session = Depends(get_db)):
+    """Get remuneration data for the authenticated teacher"""
+    try:
+        service = RemunerationService(db)
+        return service.get_teacher_all_remunerations(current_teacher.id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to fetch remuneration")
+
+@app.get("/api/v1/teacher/profile", response_model=schemas.Teacher)
+def get_teacher_profile(current_teacher: models.Teacher = Depends(get_current_teacher)):
+    """Get profile for the authenticated teacher"""
+    return current_teacher
 # ============================================
 # COURSES ENDPOINTS
 # ============================================
 @app.get("/api/v1/courses", response_model=List[schemas.Course])
-def get_courses(current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
+def get_courses(db: Session = Depends(get_db)):
     """Get all courses"""
     try:
         service = CourseService(db)
@@ -294,7 +378,7 @@ def get_cumulative_report(semester_id: int, current_user: models.User = Depends(
 # PDF EXPORT ENDPOINTS
 # ============================================
 @app.post("/api/v1/export/pdf/individual")
-def export_individual_pdf(data: schemas.PDFExportRequest, current_user: models.User = Depends(get_current_super_admin), db: Session = Depends(get_db)):
+def export_individual_pdf(data: schemas.PDFExportRequest, db: Session = Depends(get_db)):
     """Export individual teacher remuneration as PDF"""
     try:
         from pdf_generator import PDFGeneratorFactory

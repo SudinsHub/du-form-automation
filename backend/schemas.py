@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import date
@@ -127,3 +128,43 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+# Teacher Auth schemas
+class TeacherAuthCreate(BaseModel):
+    teacher_id: str
+    username: str
+    password: str
+
+
+# Teacher Invite schemas
+class TeacherInviteCreate(BaseModel):
+    teacher_id: str
+    email: str
+
+
+class TeacherAuth(BaseModel):
+    id: int
+    teacher_id: str
+    username: str
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TeacherInvite(BaseModel):
+    id: str
+    teacher_id: str
+    email: str
+    expires_at: datetime
+    is_used: bool
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TeacherActivation(BaseModel):
+    token: str
+    username: str
+    password: str

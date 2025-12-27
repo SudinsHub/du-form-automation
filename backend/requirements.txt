@@ -10,3 +10,5 @@ httpx
 BeautifulSoup4
 passlib[bcrypt]
 python-jose[cryptography]
+resend
+python-dotenv

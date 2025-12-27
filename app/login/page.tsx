@@ -5,19 +5,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [adminUsername, setAdminUsername] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [teacherUsername, setTeacherUsername] = useState("");
+  const [teacherPassword, setTeacherPassword] = useState("");
   const [error, setError] = useState("");
   const { login } = useAuthStore();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAdminSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     try {
-      await login(username, password);
+      await login(adminUsername, adminPassword, "admin");
       window.location.href = "/dashboard";
+    } catch (err) {
+      setError("Login failed. Please check your credentials.");
+    }
+  };
+
+  const handleTeacherSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await login(teacherUsername, teacherPassword, "teacher");
+      window.location.href = "/teacher-dashboard";
     } catch (err) {
       setError("Login failed. Please check your credentials.");
     }
@@ -27,37 +41,72 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Super Admin Login</CardTitle>
+          <CardTitle>DU Examination System</CardTitle>
           <CardDescription>
-            Enter your credentials to access the system
+            Login to access the system
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
-          </form>
+          <Tabs defaultValue="admin" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="admin">Super Admin</TabsTrigger>
+              <TabsTrigger value="teacher">Teacher</TabsTrigger>
+            </TabsList>
+            <TabsContent value="admin">
+              <form onSubmit={handleAdminSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="admin-username">Username</Label>
+                  <Input
+                    id="admin-username"
+                    value={adminUsername}
+                    onChange={(e) => setAdminUsername(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="admin-password">Password</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+                <Button type="submit" className="w-full">
+                  Login as Admin
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="teacher">
+              <form onSubmit={handleTeacherSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="teacher-username">Username</Label>
+                  <Input
+                    id="teacher-username"
+                    value={teacherUsername}
+                    onChange={(e) => setTeacherUsername(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="teacher-password">Password</Label>
+                  <Input
+                    id="teacher-password"
+                    type="password"
+                    value={teacherPassword}
+                    onChange={(e) => setTeacherPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+                <Button type="submit" className="w-full">
+                  Login as Teacher
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

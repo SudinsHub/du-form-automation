@@ -221,6 +221,45 @@ class RemunerationRepository:
             (models.OtherRemuneration.exam_semester_id == semester_id)
         ).distinct(models.Teacher.id).all()
     
+    def get_semesters_with_teacher_activity(
+        self, teacher_id: str
+    ) -> List[models.ExamSemester]:
+        """Get all semesters where a teacher has submitted remuneration"""
+        return self.db.query(models.ExamSemester).outerjoin(
+            models.QuestionPreparation,
+            models.ExamSemester.id == models.QuestionPreparation.exam_semester_id
+        ).outerjoin(
+            models.QuestionModeration,
+            models.ExamSemester.id == models.QuestionModeration.exam_semester_id
+        ).outerjoin(
+            models.ScriptEvaluation,
+            models.ExamSemester.id == models.ScriptEvaluation.exam_semester_id
+        ).outerjoin(
+            models.PracticalExam,
+            models.ExamSemester.id == models.PracticalExam.exam_semester_id
+        ).outerjoin(
+            models.VivaExam,
+            models.ExamSemester.id == models.VivaExam.exam_semester_id
+        ).outerjoin(
+            models.Tabulation,
+            models.ExamSemester.id == models.Tabulation.exam_semester_id
+        ).outerjoin(
+            models.AnswerSheetReview,
+            models.ExamSemester.id == models.AnswerSheetReview.exam_semester_id
+        ).outerjoin(
+            models.OtherRemuneration,
+            models.ExamSemester.id == models.OtherRemuneration.exam_semester_id
+        ).filter(
+            (models.QuestionPreparation.teacher_id == teacher_id) |
+            (models.QuestionModeration.teacher_id == teacher_id) |
+            (models.ScriptEvaluation.teacher_id == teacher_id) |
+            (models.PracticalExam.teacher_id == teacher_id) |
+            (models.VivaExam.teacher_id == teacher_id) |
+            (models.Tabulation.teacher_id == teacher_id) |
+            (models.AnswerSheetReview.teacher_id == teacher_id) |
+            (models.OtherRemuneration.teacher_id == teacher_id)
+        ).distinct(models.ExamSemester.id).all()
+    
     def commit(self) -> None:
         """Commit the current transaction"""
         self.db.commit()

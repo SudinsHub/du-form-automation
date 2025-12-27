@@ -96,6 +96,38 @@ class RemunerationService(BaseService):
             teacher_id, semester_id
         )
     
+    def get_teacher_all_remunerations(
+        self, teacher_id: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Get all remuneration data for a teacher across all semesters.
+        Returns data grouped by semester.
+        """
+        # Validate teacher exists
+        teacher = self.teacher_repo.get_by_id(teacher_id)
+        if not teacher:
+            raise ValueError(f"Teacher with ID {teacher_id} not found")
+        
+        # Get all semesters where teacher has activity
+        semesters_with_activity = self.remuneration_repo.get_semesters_with_teacher_activity(teacher_id)
+        
+        result = []
+        for semester in semesters_with_activity:
+            semester_data = {
+                "semester": {
+                    "id": semester.id,
+                    "name": semester.semester_name,
+                    "year": semester.year,
+                    "exam_start_date": semester.exam_start_date,
+                    "exam_end_date": semester.exam_end_date,
+                    "result_publish_date": semester.result_publish_date
+                },
+                "remunerations": self.remuneration_repo.get_teacher_remuneration(teacher_id, semester.id)
+            }
+            result.append(semester_data)
+        
+        return result
+    
     def get_cumulative_report(self, semester_id: int) -> List[Dict[str, Any]]:
         """
         Generate cumulative report for all teachers in a semester.

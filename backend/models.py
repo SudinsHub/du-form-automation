@@ -168,3 +168,27 @@ class User(Base):
     hashed_password = Column(String)
     is_super_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class TeacherAuth(Base):
+    __tablename__ = "teacher_auth"
+
+    id = Column(Integer, primary_key=True, index=True)
+    teacher_id = Column(String, ForeignKey("teachers.id"), unique=True)
+    username = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    teacher = relationship("Teacher")
+
+class TeacherInvite(Base):
+    __tablename__ = "teacher_invites"
+
+    id = Column(String, primary_key=True, index=True)  # UUID or secure token
+    teacher_id = Column(String, ForeignKey("teachers.id"))
+    email = Column(String, index=True)
+    token = Column(String, unique=True, index=True)
+    expires_at = Column(DateTime)
+    is_used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    teacher = relationship("Teacher")

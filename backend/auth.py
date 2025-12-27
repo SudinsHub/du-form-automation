@@ -8,8 +8,12 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 import schemas
+import os
+from dotenv import load_dotenv
 
-SECRET_KEY = "your-secret-key-here"  # Move to env var in production
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")  # Move to env var in production
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -28,6 +32,12 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
+def authenticate_teacher(db: Session, username: str, password: str):
+    teacher_auth = db.query(models.TeacherAuth).filter(models.TeacherAuth.username == username).first()
+    if not teacher_auth or not verify_password(password, teacher_auth.hashed_password):
+        return False
+    return teacher_auth
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
@@ -35,26 +45,55 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        if username is None:
+        role: str = payload.get("role")
+        if username is None or role is None:
             raise credentials_exception
-        token_data = schemas.TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = db.query(models.User).filter(models.User.username == username).first()
-    if user is None:
-        raise credentials_exception
-    return user
 
-def get_current_super_admin(current_user: models.User = Depends(get_current_user)):
-    if not current_user.is_super_admin:
+    if role == "super_admin":
+        user = db.query(models.User)\
+            .filter(models.User.username == username)\
+            .first()
+        if not user:
+            raise credentials_exception
+        return user
+
+    elif role == "teacher":
+        teacher_auth = db.query(models.TeacherAuth)\
+            .filter(models.TeacherAuth.username == username)\
+            .first()
+        if not teacher_auth:
+            raise credentials_exception
+        return teacher_auth
+
+    else:
+        raise credentials_exception
+
+
+def get_current_super_admin(
+    current_user=Depends(get_current_user)
+):
+    if not isinstance(current_user, models.User) or not current_user.is_super_admin:
         raise HTTPException(status_code=403, detail="Not a super admin")
     return current_user
+
+def get_current_teacher(
+    current_user=Depends(get_current_user)
+):
+    if not isinstance(current_user, models.TeacherAuth):
+        raise HTTPException(status_code=403, detail="Not a teacher")
+    return current_user.teacher

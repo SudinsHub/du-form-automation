@@ -1,134 +1,86 @@
-# Dhaka University Examination Remuneration System
+# University Form Automation
 
-A comprehensive web application for automating the examination remuneration bill process at Dhaka University.
+A web application for automating university remuneration forms with Excel import and PDF generation capabilities.
 
-## Features
+## Installation and Setup
 
-- **Dynamic Form Interface**: Bangla interface matching the original paper form
-- **PDF Generation**: Export individual bills and cumulative reports
-- **Dashboard**: View statistics and manage submissions
-- **Multi-section Support**: Handle all 7 main sections plus additional categories
-- **Responsive Design**: Works on desktop and mobile devices
+### Prerequisites
 
-## Tech Stack
-
-### Backend
-- FastAPI (Python web framework)
-- SQLAlchemy (ORM)
-- SQLite (Database)
-- WeasyPrint (PDF generation)
-- Pydantic (Data validation)
-
-### Frontend
-- Next.js 14 (React framework)
-- shadcn/ui (UI components)
-- Tailwind CSS (Styling)
-- Axios (HTTP client)
-- React Hook Form (Form handling)
-
-## Setup Instructions
+- Node.js (for frontend)
+- Python 3.8+ (for backend)
+- npm (package manager)
 
 ### Backend Setup
 
 1. Navigate to the backend directory:
-\`\`\`bash
-cd backend
-\`\`\`
+   ```bash
+   cd backend
+   ```
 
-2. Create a virtual environment:
-\`\`\`bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-\`\`\`
+2. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-3. Install dependencies:
-\`\`\`bash
-pip install -r requirements.txt
-\`\`\`
+3. **Important: WeasyPrint Dependencies**
 
-4. Run the FastAPI server:
-\`\`\`bash
-python main.py
-\`\`\`
+   **On Windows:**
+   WeasyPrint requires GTK3 runtime. Download and install from: https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer
 
-The backend will be available at `http://localhost:8000`
+   **On Linux:**
+   ```bash
+   sudo apt update
+   sudo apt install -y \
+     libcairo2 \
+     libpango-1.0-0 \
+     libpangocairo-1.0-0 \
+     libgdk-pixbuf-2.0-0 \
+     libharfbuzz0b \
+     libfontconfig1 \
+     libffi8
+   ```
+
+4. Start the backend server:
+   ```bash
+   uvicorn main:app --reload
+   ```
+
+   The backend will run on http://localhost:8000
 
 ### Frontend Setup
 
-1. Install Node.js dependencies:
-\`\`\`bash
-npm install
-\`\`\`
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-2. Run the development server:
-\`\`\`bash
-npm run dev
-\`\`\`
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-The frontend will be available at `http://localhost:3000`
+   The frontend will run on http://localhost:3000
 
-### Initialize Sample Data
+## Test Data
 
-1. Open the application in your browser
-2. Click the "Initialize Sample Data" button
-3. This will create sample teachers, courses, and semesters
+- There's a test Excel file located at `files/4Y1S Bills - 2024 - Demo (2).xlsx`
+- The database contains test data for 4th year 1st semester, 2024
+
+## Test Credentials
+
+### Super Admin
+
+- username : superadmin
+- password : password123
+
+### Teacher 
+
+- username : fahim_sir_csedu
+- password : password123
 
 ## Usage
 
-### Creating a Remuneration Bill
-
-1. Go to the "পরীক্ষা সংক্রান্ত সম্মানী ফর্ম" tab
-2. Select a teacher from the dropdown
-3. Select an exam semester
-4. Fill in the relevant sections using the + and - buttons to add/remove subsections
-5. Click "সংরক্ষণ করুন" to save
-6. Click "PDF এক্সপোর্ট করুন" to download the filled form
-
-### Viewing Reports
-
-1. Go to the "ড্যাশবোর্ড" tab
-2. Select a semester to view the cumulative report
-3. Click "সামগ্রিক রিপোর্ট এক্সপোর্ট" to download the cumulative PDF
-
-## API Documentation
-
-Once the backend is running, visit `http://localhost:8000/docs` for interactive API documentation.
-
-## Database Schema
-
-The system uses the following main entities:
-- Teachers
-- Courses
-- Exam Semesters
-- Various remuneration categories (Question Preparation, Script Evaluation, etc.)
-- Remuneration rates
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
-\`\`\`
-
-This complete system provides:
-
-1. **Full-stack application** with FastAPI backend and Next.js frontend
-2. **Dynamic form handling** with add/remove sections
-3. **PDF generation** for individual bills and cumulative reports
-4. **Dashboard** with statistics and report management
-5. **Bangla interface** matching the original form
-6. **Sample data** for testing
-7. **Responsive design** that works on all devices
-
-To run the system:
-1. Start the FastAPI backend: `python backend/main.py`
-2. Start the Next.js frontend: `npm run dev`
-3. Initialize sample data through the UI
-4. Start creating remuneration bills!
-
-The system handles all the requirements you specified, including the 7 main sections plus additional categories, PDF export functionality, and cumulative reporting.
+1. Start both backend and frontend servers
+2. Access the application at http://localhost:3000
+3. Use the Excel import feature to upload remuneration data
+4. Generate PDF forms as needed

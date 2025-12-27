@@ -23,6 +23,7 @@ export default function ProtectedLayout({
   const pathname = usePathname();
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
 
   const [hydrated, setHydrated] = useState(false);
 
@@ -33,8 +34,12 @@ export default function ProtectedLayout({
   useEffect(() => {
     if (hydrated && !isAuthenticated) {
       router.replace("/login");
+    } else if (hydrated && isAuthenticated && user?.role === "teacher" && !pathname.startsWith("/teacher")) {
+      router.replace("/teacher-dashboard");
+    } else if (hydrated && isAuthenticated && user?.is_super_admin && pathname.startsWith("/teacher")) {
+      router.replace("/dashboard");
     }
-  }, [hydrated, isAuthenticated, router]);
+  }, [hydrated, isAuthenticated, router, user, pathname]);
 
   if (!hydrated) {
     return (
@@ -44,7 +49,10 @@ export default function ProtectedLayout({
     );
   }
 
-  const links = [
+  const links = user?.role === "teacher" ? [
+    { href: "/teacher-dashboard", label: "ড্যাশবোর্ড", icon: BarChart3 },
+    { href: "/teacher-remuneration-form", label: "পরীক্ষা সম্মানী ফর্ম", icon: FileText },
+  ] : [
     { href: "/remuneration-form", label: "শিক্ষক সম্মানী ফর্ম", icon: FileText },
     { href: "/dashboard", label: "ড্যাশবোর্ড", icon: BarChart3 },
     { href: "/import", label: "শিক্ষক ইম্পোর্ট", icon: Upload },
